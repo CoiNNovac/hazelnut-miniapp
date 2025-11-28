@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hazelnut Profit Share</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@2.0.0/dist/tonconnect-ui.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,7 +20,9 @@
         <div class="wallet-status" id="walletStatus">
             <div class="status-indicator" id="statusIndicator"></div>
             <span id="walletText">Connecting to wallet...</span>
-            <button id="connectWallet" class="btn btn-primary">Connect Wallet</button>
+            <div id="tonconnect-button-container"></div>
+            <button id="connectWallet" class="btn btn-primary" style="display: none;">Connect Wallet</button>
+            <div id="walletAddress" style="display: none; font-size: 12px; color: #666; margin-top: 5px;"></div>
         </div>
 
         <nav class="tabs">
@@ -109,6 +112,7 @@
     <script src="app.js"></script>
 </body>
 </html>
+
 
 
 

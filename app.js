@@ -3,8 +3,73 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-// App state
+// TON Connect initialization
+let tonConnectUI;
+let walletAddress = null;
 let walletConnected = false;
+
+// Initialize TON Connect
+function initTONConnect() {
+    // TON Connect manifest URL
+    const manifestUrl = window.location.origin + '/tonconnect-manifest.json';
+    
+    // Wait for TON Connect UI to load
+    if (window.TonConnectUI) {
+        try {
+            // Initialize TON Connect UI
+            tonConnectUI = new window.TonConnectUI({
+                manifestUrl: manifestUrl,
+                buttonRootId: 'tonconnect-button-container',
+                language: 'en',
+                actionsConfiguration: {
+                    twaReturnUrl: 'https://t.me/hazelnuttokenbot'
+                }
+            });
+
+            // Check if already connected
+            tonConnectUI.connectionRestored.then((restored) => {
+                if (restored && tonConnectUI.account) {
+                    walletAddress = tonConnectUI.account.address;
+                    walletConnected = true;
+                    updateWalletUI(true, walletAddress);
+                } else {
+                    updateWalletUI(false);
+                }
+            }).catch(() => {
+                updateWalletUI(false);
+            });
+
+            // Listen for wallet connection changes
+            tonConnectUI.onStatusChange((wallet) => {
+                if (wallet && wallet.account) {
+                    walletAddress = wallet.account.address;
+                    walletConnected = true;
+                    updateWalletUI(true, walletAddress);
+                    showNotification('Wallet connected successfully!', 'success');
+                } else {
+                    walletAddress = null;
+                    walletConnected = false;
+                    updateWalletUI(false);
+                }
+            });
+        } catch (error) {
+            console.error('TON Connect initialization error:', error);
+            // Fallback to manual button
+            document.getElementById('connectWallet').style.display = 'block';
+            updateWalletUI(false);
+        }
+    } else {
+        console.warn('TON Connect UI library not loaded. Using fallback.');
+        // Fallback: show manual connect button
+        document.getElementById('connectWallet').style.display = 'block';
+        document.getElementById('connectWallet').addEventListener('click', () => {
+            showNotification('Please install TON Connect or use Telegram Wallet', 'error');
+        });
+        updateWalletUI(false);
+    }
+}
+
+// App state
 let userData = null;
 let userPortfolio = {
     tokens: 0,
@@ -16,6 +81,7 @@ let userPortfolio = {
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     initializeUser();
+    initTONConnect();
     initializeWallet();
     initializeTabs();
     initializeBuySection();
@@ -36,83 +102,29 @@ function initializeUser() {
 
 // Initialize Telegram Wallet
 function initializeWallet() {
-    const walletStatus = document.getElementById('walletStatus');
-    const statusIndicator = document.getElementById('statusIndicator');
-    const walletText = document.getElementById('walletText');
-    const connectBtn = document.getElementById('connectWallet');
-
-    // Check if wallet is available
-    if (window.Telegram?.WebApp?.initDataUnsafe?.start_param) {
-        checkWalletConnection();
-    }
-
-    connectBtn.addEventListener('click', async () => {
-        try {
-            await connectWallet();
-        } catch (error) {
-            console.error('Wallet connection error:', error);
-            showNotification('Failed to connect wallet. Please try again.', 'error');
-        }
-    });
-}
-
-// Check wallet connection status
-async function checkWalletConnection() {
-    try {
-        // In a real app, you would check the actual wallet connection
-        // For now, we'll simulate it
-        if (tg.initDataUnsafe?.start_param) {
-            walletConnected = true;
-            updateWalletUI(true);
-        } else {
-            updateWalletUI(false);
-        }
-    } catch (error) {
-        console.error('Error checking wallet:', error);
-        updateWalletUI(false);
-    }
-}
-
-// Connect to Telegram Wallet
-async function connectWallet() {
-    try {
-        // Telegram Wallet integration
-        // In production, you would use the actual Telegram Wallet API
-        if (window.ton) {
-            const accounts = await window.ton.request({ method: 'ton_requestAccounts' });
-            if (accounts && accounts.length > 0) {
-                walletConnected = true;
-                updateWalletUI(true);
-                showNotification('Wallet connected successfully!', 'success');
-                return;
-            }
-        }
-
-        // Fallback: Simulate wallet connection for demo
-        walletConnected = true;
-        updateWalletUI(true);
-        showNotification('Wallet connected successfully!', 'success');
-    } catch (error) {
-        console.error('Wallet connection error:', error);
-        throw error;
-    }
+    // TON Connect UI handles the connection button automatically
+    // This function is kept for any additional initialization
 }
 
 // Update wallet UI
-function updateWalletUI(connected) {
+function updateWalletUI(connected, address = null) {
     const statusIndicator = document.getElementById('statusIndicator');
     const walletText = document.getElementById('walletText');
     const connectBtn = document.getElementById('connectWallet');
+    const walletAddressDiv = document.getElementById('walletAddress');
 
-    if (connected) {
+    if (connected && address) {
         statusIndicator.className = 'status-indicator connected';
         walletText.textContent = 'Wallet Connected';
         connectBtn.style.display = 'none';
+        walletAddressDiv.textContent = `${address.slice(0, 6)}...${address.slice(-4)}`;
+        walletAddressDiv.style.display = 'block';
         walletConnected = true;
     } else {
         statusIndicator.className = 'status-indicator disconnected';
         walletText.textContent = 'Wallet Not Connected';
         connectBtn.style.display = 'block';
+        walletAddressDiv.style.display = 'none';
         walletConnected = false;
     }
 }
@@ -178,40 +190,73 @@ function initializeBuySection() {
 // Buy tokens function
 async function buyTokens(tonAmount) {
     try {
-        // In production, this would interact with a smart contract
-        // For now, we'll simulate the transaction
-        
+        if (!tonConnectUI || !walletConnected || !walletAddress) {
+            throw new Error('Wallet not connected');
+        }
+
         const tokenPrice = 0.10;
         const tonPrice = 2.5;
         const tokens = (tonAmount * tonPrice) / tokenPrice;
 
-        // Simulate transaction
-        showNotification('Processing transaction...', 'info');
+        // Convert TON to nanoTON (1 TON = 1,000,000,000 nanoTON)
+        const nanoTON = BigInt(Math.floor(tonAmount * 1000000000));
 
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Create transaction request
+        // NOTE: Replace with your actual smart contract address
+        const contractAddress = 'YOUR_SMART_CONTRACT_ADDRESS_HERE';
+        
+        const transaction = {
+            messages: [
+                {
+                    address: contractAddress, // Your smart contract address
+                    amount: nanoTON.toString(),
+                    payload: null // Add payload if needed for your contract
+                }
+            ],
+            validUntil: Math.floor(Date.now() / 1000) + 300 // 5 minutes
+        };
 
-        // Update portfolio
-        userPortfolio.tokens += tokens;
-        userPortfolio.totalInvested += tonAmount;
-        userPortfolio.transactions.push({
-            type: 'Buy',
-            amount: tokens,
-            tonAmount: tonAmount,
-            date: new Date().toLocaleString()
-        });
+        showNotification('Please confirm the transaction in your wallet...', 'info');
 
-        // Save to localStorage (in production, this would be on a backend)
-        savePortfolio();
+        // Send transaction via TON Connect
+        const result = await tonConnectUI.sendTransaction(transaction);
 
-        // Update UI
-        loadPortfolio();
-        document.getElementById('buyAmount').value = '';
-        document.getElementById('tokenAmount').textContent = '0 HZN';
+        if (result) {
+            // Transaction sent successfully
+            showNotification('Transaction sent! Waiting for confirmation...', 'info');
 
-        showNotification(`Successfully purchased ${tokens.toFixed(2)} HZN!`, 'success');
+            // In production, you would wait for blockchain confirmation
+            // For now, we'll simulate success after a delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Update portfolio
+            userPortfolio.tokens += tokens;
+            userPortfolio.totalInvested += tonAmount;
+            userPortfolio.transactions.push({
+                type: 'Buy',
+                amount: tokens,
+                tonAmount: tonAmount,
+                date: new Date().toLocaleString(),
+                txHash: result.boc // Transaction hash
+            });
+
+            // Save to localStorage (in production, this would be on a backend)
+            savePortfolio();
+
+            // Update UI
+            loadPortfolio();
+            document.getElementById('buyAmount').value = '';
+            document.getElementById('tokenAmount').textContent = '0 HZN';
+
+            showNotification(`Successfully purchased ${tokens.toFixed(2)} HZN!`, 'success');
+        }
     } catch (error) {
         console.error('Buy tokens error:', error);
+        if (error.message.includes('User rejected')) {
+            showNotification('Transaction cancelled by user', 'error');
+        } else {
+            showNotification('Transaction failed. Please try again.', 'error');
+        }
         throw error;
     }
 }
@@ -315,7 +360,7 @@ function loadProfit() {
 
 // Claim profit
 async function claimProfit() {
-    if (!walletConnected) {
+    if (!tonConnectUI || !walletConnected || !walletAddress) {
         showNotification('Please connect your wallet first', 'error');
         return;
     }
@@ -327,21 +372,46 @@ async function claimProfit() {
     }
 
     try {
+        // Convert profit to nanoTON
+        const nanoTON = BigInt(Math.floor(totalProfit * 1000000000));
+
+        // In production, this would call your smart contract's claim function
+        // For now, we'll simulate receiving TON from the contract
+        // NOTE: Replace with your actual profit distribution contract address
+        const profitContractAddress = 'YOUR_PROFIT_CONTRACT_ADDRESS_HERE';
+
         showNotification('Processing claim...', 'info');
-        
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
 
-        // In production, this would transfer TON to the user's wallet
-        // For now, we'll just clear the profits
-        userPortfolio.profits = [];
-        localStorage.setItem('hazelnut_profits', JSON.stringify([]));
+        // In production, you would call a smart contract method to claim
+        // This is a placeholder - actual implementation depends on your contract
+        const transaction = {
+            messages: [
+                {
+                    address: profitContractAddress,
+                    amount: '0', // No TON sent, just calling contract method
+                    payload: null // Add payload with claim method call
+                }
+            ],
+            validUntil: Math.floor(Date.now() / 1000) + 300
+        };
 
-        loadProfit();
-        showNotification('Profit claimed successfully!', 'success');
+        const result = await tonConnectUI.sendTransaction(transaction);
+
+        if (result) {
+            // Clear profits after successful claim
+            userPortfolio.profits = [];
+            localStorage.setItem('hazelnut_profits', JSON.stringify([]));
+
+            loadProfit();
+            showNotification('Profit claimed successfully!', 'success');
+        }
     } catch (error) {
         console.error('Claim profit error:', error);
-        showNotification('Failed to claim profit. Please try again.', 'error');
+        if (error.message.includes('User rejected')) {
+            showNotification('Transaction cancelled by user', 'error');
+        } else {
+            showNotification('Failed to claim profit. Please try again.', 'error');
+        }
     }
 }
 
@@ -379,8 +449,5 @@ function simulateProfitDistribution() {
     }
 }
 
-// Auto-check wallet connection on load
-setTimeout(() => {
-    checkWalletConnection();
-}, 1000);
+// TON Connect is initialized automatically via initTONConnect()
 
