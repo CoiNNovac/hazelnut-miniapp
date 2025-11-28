@@ -5,7 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hazelnut Profit Share</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@2.0.0/dist/tonconnect-ui.min.js"></script>
+    <script>
+        // Load TON Connect UI dynamically
+        (function() {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/@tonconnect/ui@2.0.0/dist/tonconnect-ui.min.js';
+            script.async = true;
+            script.onload = function() {
+                console.log('TON Connect UI loaded');
+                window.tonConnectUILoaded = true;
+            };
+            script.onerror = function() {
+                console.error('Failed to load TON Connect UI');
+                window.tonConnectUILoaded = false;
+            };
+            document.head.appendChild(script);
+        })();
+    </script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
