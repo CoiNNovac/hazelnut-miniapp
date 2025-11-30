@@ -349,6 +349,39 @@ header h1 {
     100% { transform: rotate(360deg); }
 }
 
+/* Footer */
+.app-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    padding: 12px 20px;
+    text-align: center;
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+}
+
+.footer-content {
+    font-size: 11px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.footer-separator {
+    color: #ccc;
+}
+
+#appVersion {
+    font-weight: 600;
+    color: #667eea;
+}
+
+#buildDate {
+    color: #999;
+}
+
 /* Responsive adjustments */
 @media (max-width: 480px) {
     .container {
@@ -362,6 +395,11 @@ header h1 {
     .tab-btn {
         font-size: 12px;
         padding: 12px 8px;
+    }
+    
+    .footer-content {
+        font-size: 10px;
+        flex-wrap: wrap;
     }
 }
 

@@ -262,6 +262,7 @@ let userPortfolio = {
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     initializeUser();
+    initializeVersion();
     initTONConnect();
     initializeWallet();
     initializeTabs();
@@ -269,6 +270,16 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPortfolio();
     loadProfit();
 });
+
+// Initialize version display
+function initializeVersion() {
+    if (window.APP_VERSION) {
+        document.getElementById('appVersion').textContent = window.APP_VERSION;
+    }
+    if (window.BUILD_DATE) {
+        document.getElementById('buildDate').textContent = window.BUILD_DATE;
+    }
+}
 
 // Initialize user data from Telegram
 function initializeUser() {

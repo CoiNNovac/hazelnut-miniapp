@@ -1,6 +1,6 @@
 {
   "name": "hazelnut-miniapp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Telegram Mini App for Hazelnut Profit Share",
   "main": "index.html",
   "scripts": {
