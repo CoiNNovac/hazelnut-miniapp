@@ -12,14 +12,52 @@ let walletConnected = false;
 async function initTONConnect() {
     const manifestUrl = 'https://coinnovac.github.io/hazelnut-miniapp/tonconnect-manifest.json';
     console.log('Initializing TON Connect with manifest:', manifestUrl);
+    console.log('Checking for TON Connect SDK...', {
+        TonConnect: typeof window.TonConnect,
+        tonConnectSDKLoaded: window.tonConnectSDKLoaded,
+        allKeys: Object.keys(window).filter(k => k.toLowerCase().includes('ton'))
+    });
     
     // Wait for SDK to load
+    let attempts = 0;
+    const maxAttempts = 100; // 10 seconds max wait
+    
     function waitForSDK() {
+        attempts++;
+        
+        // Check if SDK is loaded
         if (window.TonConnect) {
+            console.log('TON Connect SDK found, initializing...');
             initializeTONConnect(manifestUrl);
-        } else {
-            setTimeout(waitForSDK, 100);
+            return;
         }
+        
+        // Check if we've exceeded max attempts
+        if (attempts >= maxAttempts) {
+            console.error('TON Connect SDK failed to load after', attempts, 'attempts');
+            console.error('Available globals:', Object.keys(window).filter(k => k.toLowerCase().includes('ton')));
+            showSDKError();
+            return;
+        }
+        
+        // Try again
+        setTimeout(waitForSDK, 100);
+    }
+    
+    function showSDKError() {
+        const connectBtn = document.getElementById('connectWallet');
+        connectBtn.style.display = 'block';
+        connectBtn.onclick = () => {
+            showNotification('TON Connect SDK failed to load. Please check your internet connection and refresh.', 'error');
+            // Try to reload SDK
+            location.reload();
+        };
+        updateWalletUI(false);
+        
+        // Show error in UI
+        const walletText = document.getElementById('walletText');
+        walletText.textContent = 'SDK Loading Failed';
+        walletText.style.color = '#dc3545';
     }
     
     async function initializeTONConnect(manifestUrl) {
@@ -67,27 +105,14 @@ async function initTONConnect() {
         connectBtn.onclick = connectWallet;
     }
     
-    // Start initialization
+    // Start initialization - wait a bit for script to load
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(waitForSDK, 500);
+            setTimeout(waitForSDK, 1000); // Give SDK more time to load
         });
     } else {
-        setTimeout(waitForSDK, 500);
+        setTimeout(waitForSDK, 1000);
     }
-    
-    // Timeout fallback
-    setTimeout(() => {
-        if (!tonConnect) {
-            console.warn('TON Connect SDK not loaded');
-            const connectBtn = document.getElementById('connectWallet');
-            connectBtn.style.display = 'block';
-            connectBtn.onclick = () => {
-                showNotification('Wallet SDK not loaded. Please refresh the page.', 'error');
-            };
-            updateWalletUI(false);
-        }
-    }, 5000);
 }
 
 // Connect wallet function

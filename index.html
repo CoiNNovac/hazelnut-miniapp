@@ -5,8 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hazelnut Profit Share</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
     <link rel="stylesheet" href="style.css">
+    <script>
+        // Load TON Connect SDK dynamically with fallbacks
+        (function() {
+            const sdkUrls = [
+                'https://unpkg.com/@tonconnect/sdk@2.2.0/dist/tonconnect-sdk.min.js',
+                'https://cdn.jsdelivr.net/npm/@tonconnect/sdk@2.2.0/dist/tonconnect-sdk.min.js',
+                'https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js'
+            ];
+            
+            let currentUrlIndex = 0;
+            
+            function loadSDK() {
+                if (currentUrlIndex >= sdkUrls.length) {
+                    console.error('All TON Connect SDK CDN URLs failed');
+                    window.tonConnectSDKLoaded = false;
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = sdkUrls[currentUrlIndex];
+                script.async = true;
+                script.crossOrigin = 'anonymous';
+                
+                script.onload = function() {
+                    console.log('TON Connect SDK loaded from:', sdkUrls[currentUrlIndex]);
+                    // Check if SDK is actually available
+                    setTimeout(() => {
+                        if (window.TonConnect) {
+                            window.tonConnectSDKLoaded = true;
+                            console.log('TON Connect SDK is available');
+                        } else {
+                            console.warn('Script loaded but TonConnect not available, trying next URL');
+                            currentUrlIndex++;
+                            loadSDK();
+                        }
+                    }, 100);
+                };
+                
+                script.onerror = function() {
+                    console.error('Failed to load SDK from:', sdkUrls[currentUrlIndex]);
+                    currentUrlIndex++;
+                    loadSDK();
+                };
+                
+                document.head.appendChild(script);
+            }
+            
+            // Start loading
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', loadSDK);
+            } else {
+                loadSDK();
+            }
+        })();
+    </script>
 </head>
 <body>
     <div class="container">
