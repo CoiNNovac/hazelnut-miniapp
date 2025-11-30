@@ -3,122 +3,251 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-// TON Connect initialization
-let tonConnectUI;
+// TON Connect initialization (using core SDK - UI library has issues in Telegram Mini Apps)
+let tonConnect;
 let walletAddress = null;
 let walletConnected = false;
 
-// Initialize TON Connect
-function initTONConnect() {
-    // TON Connect manifest URL
-    const manifestUrl = window.location.origin + '/tonconnect-manifest.json';
-    console.log('TON Connect manifest URL:', manifestUrl);
+// Initialize TON Connect using core SDK
+async function initTONConnect() {
+    const manifestUrl = 'https://coinnovac.github.io/hazelnut-miniapp/tonconnect-manifest.json';
+    console.log('Initializing TON Connect with manifest:', manifestUrl);
     
-    // Verify manifest is accessible
-    fetch(manifestUrl)
-        .then(response => {
-            if (!response.ok) {
-                console.error('Manifest file not accessible:', response.status);
-            } else {
-                console.log('Manifest file is accessible');
-            }
-        })
-        .catch(error => {
-            console.error('Error checking manifest:', error);
-        });
-    
-    // Function to initialize TON Connect when library is available
-    function tryInitTONConnect() {
-        console.log('Checking for TON Connect UI...', {
-            TonConnectUI: typeof window.TonConnectUI,
-            tonConnectUILoaded: window.tonConnectUILoaded,
-            windowKeys: Object.keys(window).filter(k => k.toLowerCase().includes('ton'))
-        });
-        
-        if (window.TonConnectUI) {
-            try {
-                console.log('Initializing TON Connect UI with manifest:', manifestUrl);
-                // Initialize TON Connect UI
-                tonConnectUI = new window.TonConnectUI({
-                    manifestUrl: manifestUrl,
-                    buttonRootId: 'tonconnect-button-container',
-                    language: 'en',
-                    actionsConfiguration: {
-                        twaReturnUrl: 'https://t.me/hazelnuttokenbot'
-                    }
-                });
-
-                // Check if already connected
-                tonConnectUI.connectionRestored.then((restored) => {
-                    console.log('Connection restored:', restored);
-                    if (restored && tonConnectUI.account) {
-                        walletAddress = tonConnectUI.account.address;
-                        walletConnected = true;
-                        updateWalletUI(true, walletAddress);
-                    } else {
-                        updateWalletUI(false);
-                    }
-                }).catch((error) => {
-                    console.error('Connection restore error:', error);
-                    updateWalletUI(false);
-                });
-
-                // Listen for wallet connection changes
-                tonConnectUI.onStatusChange((wallet) => {
-                    console.log('Wallet status changed:', wallet);
-                    if (wallet && wallet.account) {
-                        walletAddress = wallet.account.address;
-                        walletConnected = true;
-                        updateWalletUI(true, walletAddress);
-                        showNotification('Wallet connected successfully!', 'success');
-                    } else {
-                        walletAddress = null;
-                        walletConnected = false;
-                        updateWalletUI(false);
-                    }
-                });
-                
-                console.log('TON Connect UI initialized successfully');
-            } catch (error) {
-                console.error('TON Connect initialization error:', error);
-                // Fallback to manual button
-                showFallbackButton();
-            }
+    // Wait for SDK to load
+    function waitForSDK() {
+        if (window.TonConnect) {
+            initializeTONConnect(manifestUrl);
         } else {
-            // Try again after a short delay
-            setTimeout(tryInitTONConnect, 100);
+            setTimeout(waitForSDK, 100);
         }
     }
     
-    // Show fallback button
-    function showFallbackButton() {
-        const connectBtn = document.getElementById('connectWallet');
-        connectBtn.style.display = 'block';
-        connectBtn.onclick = () => {
-            showNotification('TON Connect is loading. Please wait...', 'info');
-            // Try to initialize again
-            setTimeout(tryInitTONConnect, 500);
-        };
-        updateWalletUI(false);
+    async function initializeTONConnect(manifestUrl) {
+        try {
+            // Initialize TON Connect SDK
+            tonConnect = new window.TonConnect({
+                manifestUrl: manifestUrl
+            });
+
+            // Try to restore previous connection
+            try {
+                const restored = await tonConnect.restoreConnection();
+                if (restored && tonConnect.wallet) {
+                    walletAddress = tonConnect.wallet.account.address;
+                    walletConnected = true;
+                    updateWalletUI(true, walletAddress);
+                    console.log('Wallet connection restored:', walletAddress);
+                    return;
+                }
+            } catch (error) {
+                console.log('No previous connection to restore');
+            }
+
+            // Set up connection button
+            setupConnectButton();
+            updateWalletUI(false);
+            
+        } catch (error) {
+            console.error('TON Connect initialization error:', error);
+            showNotification('Failed to initialize wallet connection', 'error');
+            updateWalletUI(false);
+        }
     }
     
-    // Start trying to initialize
-    // Wait a bit for scripts to load
+    // Setup connect button
+    function setupConnectButton() {
+        const connectBtn = document.getElementById('connectWallet');
+        const container = document.getElementById('tonconnect-button-container');
+        
+        // Hide TON Connect UI container (we're using our own button)
+        if (container) container.style.display = 'none';
+        
+        // Show our connect button
+        connectBtn.style.display = 'block';
+        connectBtn.onclick = connectWallet;
+    }
+    
+    // Start initialization
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(tryInitTONConnect, 500);
+            setTimeout(waitForSDK, 500);
         });
     } else {
-        setTimeout(tryInitTONConnect, 500);
+        setTimeout(waitForSDK, 500);
     }
     
-    // Also set a timeout to show fallback if library doesn't load
+    // Timeout fallback
     setTimeout(() => {
-        if (!tonConnectUI && !window.TonConnectUI) {
-            console.warn('TON Connect UI library not loaded after timeout');
-            showFallbackButton();
+        if (!tonConnect) {
+            console.warn('TON Connect SDK not loaded');
+            const connectBtn = document.getElementById('connectWallet');
+            connectBtn.style.display = 'block';
+            connectBtn.onclick = () => {
+                showNotification('Wallet SDK not loaded. Please refresh the page.', 'error');
+            };
+            updateWalletUI(false);
         }
-    }, 3000);
+    }, 5000);
+}
+
+// Connect wallet function
+async function connectWallet() {
+    if (!tonConnect) {
+        showNotification('Wallet SDK not ready. Please wait...', 'error');
+        return;
+    }
+
+    try {
+        showNotification('Loading available wallets...', 'info');
+        
+        // Get available wallets
+        const walletsList = await tonConnect.getWallets();
+        console.log('Available wallets:', walletsList);
+        
+        if (!walletsList || walletsList.length === 0) {
+            showNotification('No wallets available. Please install Telegram Wallet.', 'error');
+            return;
+        }
+
+        // Find Telegram Wallet (usually first or has 'telegram' in name)
+        let telegramWallet = walletsList.find(w => 
+            w.name.toLowerCase().includes('telegram') || 
+            w.appName.toLowerCase().includes('telegram')
+        );
+        
+        // If not found, use first wallet (usually Telegram Wallet)
+        if (!telegramWallet && walletsList.length > 0) {
+            telegramWallet = walletsList[0];
+        }
+
+        if (telegramWallet) {
+            console.log('Connecting to wallet:', telegramWallet.name);
+            showNotification(`Connecting to ${telegramWallet.name}...`, 'info');
+            
+            // Connect to wallet
+            await tonConnect.connect({ jsBridgeKey: telegramWallet.jsBridgeKey });
+            
+            // Wait for connection
+            tonConnect.onStatusChange((wallet) => {
+                if (wallet) {
+                    walletAddress = wallet.account.address;
+                    walletConnected = true;
+                    updateWalletUI(true, walletAddress);
+                    showNotification('Wallet connected successfully!', 'success');
+                } else {
+                    walletAddress = null;
+                    walletConnected = false;
+                    updateWalletUI(false);
+                }
+            });
+        } else {
+            // Show wallet selection
+            showWalletSelection(walletsList);
+        }
+    } catch (error) {
+        console.error('Wallet connection error:', error);
+        showNotification('Failed to connect wallet: ' + (error.message || 'Unknown error'), 'error');
+    }
+}
+
+// Show wallet selection modal
+function showWalletSelection(wallets) {
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.id = 'wallet-selection-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: white;
+        padding: 24px;
+        border-radius: 16px;
+        max-width: 400px;
+        width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+    `;
+    
+    content.innerHTML = `
+        <h2 style="margin: 0 0 20px 0; color: #333;">Select Wallet</h2>
+        <div id="wallets-list" style="margin-bottom: 20px;"></div>
+        <button id="cancel-wallet-btn" style="width: 100%; padding: 12px; background: #f8f9fa; color: #333; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 16px;">
+            Cancel
+        </button>
+    `;
+    
+    const walletsList = document.getElementById('wallets-list');
+    wallets.forEach(wallet => {
+        const walletBtn = document.createElement('button');
+        walletBtn.style.cssText = `
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 16px;
+            margin: 8px 0;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 16px;
+            transition: all 0.2s;
+        `;
+        walletBtn.onmouseover = () => {
+            walletBtn.style.background = '#e9ecef';
+            walletBtn.style.borderColor = '#667eea';
+        };
+        walletBtn.onmouseout = () => {
+            walletBtn.style.background = '#f8f9fa';
+            walletBtn.style.borderColor = '#e0e0e0';
+        };
+        
+        walletBtn.innerHTML = `
+            <div style="flex: 1;">
+                <div style="font-weight: 600; color: #333; margin-bottom: 4px;">${wallet.name}</div>
+                ${wallet.about ? `<div style="font-size: 12px; color: #666;">${wallet.about}</div>` : ''}
+            </div>
+        `;
+        
+        walletBtn.onclick = async () => {
+            try {
+                showNotification(`Connecting to ${wallet.name}...`, 'info');
+                await tonConnect.connect({ jsBridgeKey: wallet.jsBridgeKey });
+                modal.remove();
+            } catch (error) {
+                console.error('Connection error:', error);
+                showNotification('Connection failed: ' + (error.message || 'Unknown error'), 'error');
+            }
+        };
+        
+        walletsList.appendChild(walletBtn);
+    });
+    
+    content.querySelector('#cancel-wallet-btn').onclick = () => {
+        modal.remove();
+    };
+    
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    // Close on overlay click
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    };
 }
 
 // App state
@@ -242,7 +371,7 @@ function initializeBuySection() {
 // Buy tokens function
 async function buyTokens(tonAmount) {
     try {
-        if (!tonConnectUI || !walletConnected || !walletAddress) {
+        if (!tonConnect || !walletConnected || !walletAddress) {
             throw new Error('Wallet not connected');
         }
 
@@ -270,8 +399,8 @@ async function buyTokens(tonAmount) {
 
         showNotification('Please confirm the transaction in your wallet...', 'info');
 
-        // Send transaction via TON Connect
-        const result = await tonConnectUI.sendTransaction(transaction);
+        // Send transaction via TON Connect SDK
+        const result = await tonConnect.sendTransaction(transaction);
 
         if (result) {
             // Transaction sent successfully
@@ -412,7 +541,7 @@ function loadProfit() {
 
 // Claim profit
 async function claimProfit() {
-    if (!tonConnectUI || !walletConnected || !walletAddress) {
+    if (!tonConnect || !walletConnected || !walletAddress) {
         showNotification('Please connect your wallet first', 'error');
         return;
     }
@@ -447,7 +576,7 @@ async function claimProfit() {
             validUntil: Math.floor(Date.now() / 1000) + 300
         };
 
-        const result = await tonConnectUI.sendTransaction(transaction);
+        const result = await tonConnect.sendTransaction(transaction);
 
         if (result) {
             // Clear profits after successful claim
