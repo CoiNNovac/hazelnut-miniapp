@@ -27,26 +27,41 @@ function initTONConnect() {
             
             console.log('Creating TonConnectUI instance...');
             
-            // Initialize TON Connect UI (Blum-style)
+            // Initialize TON Connect UI (based on official demo: https://github.com/ton-connect/demo-dapp-with-wallet)
             tonConnectUI = new window.TonConnectUI({
                 manifestUrl: manifestUrl,
                 buttonRootId: 'ton-connect-button',
                 language: 'en',
+                // Actions configuration - return URL after wallet interaction
                 actionsConfiguration: {
                     twaReturnUrl: 'https://t.me/hazelnuttokenbot'
                 },
+                // Wallet list configuration - ensure Telegram Wallet is prioritized
+                walletsListConfiguration: {
+                    includeWallets: [
+                        {
+                            appName: 'telegram-wallet',
+                            name: 'Wallet',
+                            imageUrl: 'https://wallet.tg/images/logo-288.png',
+                            aboutUrl: 'https://wallet.tg/',
+                            universalLink: 'https://t.me/wallet/start',
+                            bridgeUrl: 'https://bridge.tonapi.io/bridge',
+                            platforms: ['ios', 'android', 'macos', 'windows', 'linux']
+                        }
+                    ]
+                },
                 // UI preferences to match Blum style
                 uiPreferences: {
-                    theme: tg.colorScheme || 'light',
+                    theme: tg.colorScheme === 'dark' ? 'DARK' : 'LIGHT',
                     borderRadius: 'm',
                     colorsSet: {
-                        [window.TonConnectUI?.THEME?.LIGHT || 'light']: {
+                        LIGHT: {
                             connectButton: {
                                 background: '#2AABEE',
                                 foreground: '#FFFFFF'
                             }
                         },
-                        [window.TonConnectUI?.THEME?.DARK || 'dark']: {
+                        DARK: {
                             connectButton: {
                                 background: '#2AABEE',
                                 foreground: '#FFFFFF'
