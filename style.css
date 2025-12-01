@@ -44,6 +44,19 @@ header h1 {
     align-items: center;
     gap: 10px;
     border-bottom: 1px solid #e0e0e0;
+    flex-wrap: wrap;
+}
+
+/* TON Connect button container styling */
+#ton-connect-button {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* Ensure TON Connect button is visible and styled */
+#ton-connect-button button[data-tc-button="true"] {
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .status-indicator {
