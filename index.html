@@ -19,12 +19,14 @@
         </header>
 
         <div class="wallet-status" id="walletStatus">
-            <div class="status-indicator" id="statusIndicator"></div>
-            <span id="walletText">Connecting to wallet...</span>
             <!-- TON Connect UI will inject button here (Blum-style) -->
-            <div id="ton-connect-button" style="flex: 1;"></div>
+            <div id="ton-connect-button" style="flex: 1; width: 100%;"></div>
+            <div id="walletConnectedInfo" style="display: none; flex: 1; display: flex; align-items: center; gap: 10px;">
+                <div class="status-indicator connected" id="statusIndicator"></div>
+                <span id="walletText" style="color: #34C759; font-weight: 600;">Wallet Connected</span>
+                <div id="walletAddress" style="font-size: 12px; color: #666;"></div>
+            </div>
             <button id="connectWallet" class="btn btn-primary" style="display: none;">Connect Wallet</button>
-            <div id="walletAddress" style="display: none; font-size: 12px; color: #666; margin-top: 5px;"></div>
         </div>
 
         <nav class="tabs">

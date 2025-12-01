@@ -82,10 +82,12 @@ function initTONConnect() {
                     walletConnected = true;
                     updateWalletUI(true, walletAddress);
                 } else {
+                    // Not connected - show TON Connect button (Blum-style)
                     updateWalletUI(false);
                 }
             }).catch((error) => {
                 console.log('No previous connection:', error);
+                // Not connected - show TON Connect button (Blum-style)
                 updateWalletUI(false);
             });
             
@@ -444,11 +446,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize version display
 function initializeVersion() {
-    if (window.APP_VERSION) {
-        document.getElementById('appVersion').textContent = window.APP_VERSION;
+    const appVersionEl = document.getElementById('appVersion');
+    const buildDateEl = document.getElementById('buildDate');
+    
+    if (appVersionEl) {
+        // Use window.APP_VERSION if available, otherwise use fallback
+        appVersionEl.textContent = window.APP_VERSION || '1.0.5';
     }
-    if (window.BUILD_DATE) {
-        document.getElementById('buildDate').textContent = window.BUILD_DATE;
+    
+    if (buildDateEl) {
+        // Use window.BUILD_DATE if available, otherwise use fallback
+        buildDateEl.textContent = window.BUILD_DATE || '2024-11-30';
     }
 }
 
@@ -477,48 +485,41 @@ function updateWalletUI(connected, address = null) {
     const connectBtn = document.getElementById('connectWallet');
     const tonConnectButtonContainer = document.getElementById('ton-connect-button');
     
-    if (!statusIndicator || !walletText) return;
-    
     if (connected && address) {
-        // Connected state
-        statusIndicator.className = 'status-indicator connected';
-        walletText.textContent = 'Wallet Connected';
-        walletText.style.color = '#34C759';
-        
-        // Hide TON Connect button when connected
+        // Connected state - hide button, show connected info
         if (tonConnectButtonContainer) {
             tonConnectButtonContainer.style.display = 'none';
         }
-        connectBtn.style.display = 'none';
+        const walletConnectedInfo = document.getElementById('walletConnectedInfo');
+        if (walletConnectedInfo) {
+            walletConnectedInfo.style.display = 'flex';
+        }
+        if (connectBtn) {
+            connectBtn.style.display = 'none';
+        }
         
         if (walletAddressDiv) {
             const shortAddress = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
             walletAddressDiv.textContent = shortAddress;
-            walletAddressDiv.style.display = 'block';
             walletAddressDiv.title = address; // Show full address on hover
-            walletAddressDiv.style.marginLeft = '8px';
-            walletAddressDiv.style.fontSize = '12px';
-            walletAddressDiv.style.color = '#666';
         }
         
+        walletAddress = address;
         walletConnected = true;
     } else {
-        // Disconnected state - show TON Connect button
-        statusIndicator.className = 'status-indicator disconnected';
-        walletText.textContent = 'Wallet Not Connected';
-        walletText.style.color = '#8E8E93';
-        
-        // Show TON Connect button when not connected
+        // Disconnected state - show TON Connect button (Blum-style)
         if (tonConnectButtonContainer) {
             tonConnectButtonContainer.style.display = 'block';
         }
-        connectBtn.style.display = 'none'; // Hide fallback, use TON Connect UI button
-        
-        if (walletAddressDiv) {
-            walletAddressDiv.textContent = '';
-            walletAddressDiv.style.display = 'none';
+        const walletConnectedInfo = document.getElementById('walletConnectedInfo');
+        if (walletConnectedInfo) {
+            walletConnectedInfo.style.display = 'none';
+        }
+        if (connectBtn) {
+            connectBtn.style.display = 'none'; // Hide fallback, use TON Connect UI button
         }
         
+        walletAddress = null;
         walletConnected = false;
     }
     
