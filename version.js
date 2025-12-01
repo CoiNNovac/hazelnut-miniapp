@@ -1,5 +1,5 @@
 // App version - update this when deploying changes
-const APP_VERSION = '1.0.3';
+const APP_VERSION = '1.0.4';
 const BUILD_DATE = '2024-11-30';
 
 // Make version available globally

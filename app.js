@@ -1,101 +1,114 @@
-// Telegram Web App initialization
+// Telegram Web App initialization (Blum-style)
 const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-// Set up the theme based on Telegram's color scheme
-function setupTheme() {
-    if (tg.colorScheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-    }
-    
-    // Listen for theme changes
-    tg.onEvent('themeChanged', setupTheme);
-}
-setupTheme();
-
-// TON Connect initialization
-let tonConnect;
+// TON Connect UI (Blum-style approach)
+let tonConnectUI = null;
 let walletAddress = null;
 let walletConnected = false;
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 3;
 
-// Initialize TON Connect using core SDK with Blum-style behavior
-async function initTONConnect() {
-    const manifestUrl = 'https://coinnovac.github.io/hazelnut-miniapp/tonconnect-manifest.json';
-    console.log('Initializing TON Connect with manifest:', manifestUrl);
+// Initialize TON Connect UI (adapted from ChatGPT suggestion)
+function initTONConnect() {
+    console.log('Initializing TON Connect UI (Blum-style)...');
     
-    // Show loading state
-    updateWalletUI(false, 'Connecting to wallet...');
-    
-    // Wait for SDK to load
-    await waitForSDK();
-    
-    if (!window.TonConnect) {
-        console.error('TON Connect SDK not available');
-        showSDKError('Wallet service unavailable. Please try again later.');
-        return;
+    // Wait for TonConnectUI to be available
+    function waitForTonConnectUI() {
+        if (window.TonConnectUI) {
+            initializeTonConnectUI();
+        } else {
+            setTimeout(waitForTonConnectUI, 100);
+        }
     }
     
-    try {
-        // Initialize TON Connect SDK
-        tonConnect = new window.TonConnect({
-            manifestUrl: manifestUrl,
-            buttonRootId: 'tonconnect-button-container',
-            language: 'en',
-            uiPreferences: {
-                theme: tg.colorScheme || 'light',
-                borderRadius: 'm',
-                colorsSet: {
-                    [Themes.LIGHT]: {
-                        constant: {
-                            white: '#ffffff',
-                            black: '#000000'
-                        },
-                        connectButton: {
-                            background: '#2AABEE',
-                            foreground: '#ffffff'
-                        },
-                        accent: '#2AABEE',
-                        error: '#FF3B30',
-                        success: '#34C759',
-                        overlay: 'rgba(0, 0, 0, 0.4)'
-                    },
-                    [Themes.DARK]: {
-                        constant: {
-                            white: '#ffffff',
-                            black: '#000000'
-                        },
-                        connectButton: {
-                            background: '#2AABEE',
-                            foreground: '#ffffff'
-                        },
-                        accent: '#2AABEE',
-                        error: '#FF453A',
-                        success: '#30D158',
-                        overlay: 'rgba(0, 0, 0, 0.6)'
-                    }
+    function initializeTonConnectUI() {
+        try {
+            const manifestUrl = 'https://coinnovac.github.io/hazelnut-miniapp/tonconnect-manifest.json';
+            
+            console.log('Creating TonConnectUI instance...');
+            
+            // Initialize TON Connect UI (Blum-style)
+            tonConnectUI = new window.TonConnectUI({
+                manifestUrl: manifestUrl,
+                buttonRootId: 'ton-connect-button',
+                language: 'en',
+                actionsConfiguration: {
+                    twaReturnUrl: 'https://t.me/hazelnuttokenbot'
                 }
-            }
-        });
-        
-        // Try to restore connection
-        await restoreConnection();
-        
-    } catch (error) {
-        console.error('TON Connect initialization error:', error);
-        showSDKError('Failed to initialize wallet service');
+            });
+            
+            console.log('TON Connect UI initialized');
+            
+            // Listen for wallet status changes (Blum-style)
+            tonConnectUI.onStatusChange((walletInfo) => {
+                console.log('Wallet status changed:', walletInfo);
+                
+                if (walletInfo && walletInfo.account) {
+                    walletAddress = walletInfo.account.address;
+                    walletConnected = true;
+                    updateWalletUI(true, walletAddress);
+                    showNotification('Wallet connected successfully!', 'success');
+                } else {
+                    walletAddress = null;
+                    walletConnected = false;
+                    updateWalletUI(false);
+                }
+            });
+            
+            // Check if already connected
+            tonConnectUI.connectionRestored.then((restored) => {
+                console.log('Connection restored:', restored);
+                if (restored && tonConnectUI.account) {
+                    walletAddress = tonConnectUI.account.address;
+                    walletConnected = true;
+                    updateWalletUI(true, walletAddress);
+                } else {
+                    updateWalletUI(false);
+                }
+            }).catch((error) => {
+                console.log('No previous connection:', error);
+                updateWalletUI(false);
+            });
+            
+        } catch (error) {
+            console.error('TON Connect UI initialization error:', error);
+            showSDKError('Failed to initialize wallet connection');
+        }
     }
+    
+    // Start waiting for library
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(waitForTonConnectUI, 500);
+        });
+    } else {
+        setTimeout(waitForTonConnectUI, 500);
+    }
+    
+    // Timeout fallback
+    setTimeout(() => {
+        if (!tonConnectUI && !window.TonConnectUI) {
+            console.error('TON Connect UI not loaded after timeout');
+            showSDKError('Wallet service unavailable. Please refresh the page.');
+        }
+    }, 5000);
 }
 
-// Wait for SDK to load
+// Show SDK error
+function showSDKError(message) {
+    const connectBtn = document.getElementById('connectWallet');
+    connectBtn.style.display = 'block';
+    connectBtn.onclick = () => {
+        showNotification(message, 'error');
+    };
+    updateWalletUI(false);
+}
+
+// Wait for SDK to load (legacy function - keeping for compatibility)
 async function waitForSDK() {
     return new Promise((resolve) => {
         let attempts = 0;
-        const maxAttempts = 50; // 5 seconds max wait
+        const maxAttempts = 50;
         
         function check() {
             attempts++;
@@ -562,7 +575,7 @@ function initializeBuySection() {
 // Buy tokens function
 async function buyTokens(tonAmount) {
     try {
-        if (!tonConnect || !walletConnected || !walletAddress) {
+        if (!tonConnectUI || !walletConnected || !walletAddress) {
             throw new Error('Wallet not connected');
         }
 
@@ -591,7 +604,7 @@ async function buyTokens(tonAmount) {
         showNotification('Please confirm the transaction in your wallet...', 'info');
 
         // Send transaction via TON Connect SDK
-        const result = await tonConnect.sendTransaction(transaction);
+        const result = await tonConnectUI.sendTransaction(transaction);
 
         if (result) {
             // Transaction sent successfully
@@ -732,7 +745,7 @@ function loadProfit() {
 
 // Claim profit
 async function claimProfit() {
-    if (!tonConnect || !walletConnected || !walletAddress) {
+    if (!tonConnectUI || !walletConnected || !walletAddress) {
         showNotification('Please connect your wallet first', 'error');
         return;
     }
@@ -767,7 +780,7 @@ async function claimProfit() {
             validUntil: Math.floor(Date.now() / 1000) + 300
         };
 
-        const result = await tonConnect.sendTransaction(transaction);
+        const result = await tonConnectUI.sendTransaction(transaction);
 
         if (result) {
             // Clear profits after successful claim
