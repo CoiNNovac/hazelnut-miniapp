@@ -1,0 +1,46 @@
+.app {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+
+  .app-container {
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+
+    h1 {
+      color: rgba(102, 170, 238, 0.91);
+      font-size: 2.5rem;
+      margin-bottom: 2rem;
+      font-weight: bold;
+    }
+
+    .wallet-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      padding: 2rem;
+      background: rgba(102, 170, 238, 0.05);
+      border-radius: 16px;
+      border: 1px solid rgba(102, 170, 238, 0.1);
+    }
+  }
+}
+
+@media (max-width: 525px) {
+  .app {
+    .app-container {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .wallet-section {
+        padding: 1.5rem;
+        gap: 1.5rem;
+      }
+    }
+  }
+}
