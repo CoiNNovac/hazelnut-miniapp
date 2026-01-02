@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  telegramId    String   @unique
+  username      String?
+  walletAddress String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  purchases Purchase[]
+  profits   Profit[]
+
+  @@index([walletAddress])
+  @@map("users")
+}
+
+model Token {
+  id              String   @id @default(uuid())
+  symbol          String   @unique
+  name            String
+  price           Float
+  totalSupply     Int
+  availableSupply Int
+  saleStart       DateTime
+  saleEnd         DateTime
+  issuer          Json // Farmer details
+  logo            String
+  status          String   @default("upcoming") // upcoming, active, ended
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  purchases Purchase[]
+
+  @@index([status])
+  @@map("tokens")
+}
+
+model Purchase {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenId   String
+  amount    Int
+  price     Float
+  total     Float
+  txHash    String?
+  status    String   @default("pending") // pending, confirmed, failed
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  token Token @relation(fields: [tokenId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("purchases")
+}
+
+model Profit {
+  id        String    @id @default(uuid())
+  userId    String
+  amount    Float
+  txHash    String?
+  claimedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, claimedAt])
+  @@map("profits")
+}
