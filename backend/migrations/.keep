@@ -1,0 +1,2 @@
+-- This file is used to keep the migrations directory in git
+-- SQLx will look for migrations in this directory during compile-time checks

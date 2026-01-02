@@ -1,0 +1,22 @@
+# Tasks for Blockchain Indexer
+
+## Core Implementation
+- [x] Define project structure
+- [x] Set up PostgreSQL database schema
+- [x] Implement blockchain event listener
+- [x] Implement event processor for token transfers
+- [x] Implement RabbitMQ producer
+- [x] Implement RabbitMQ consumer
+- [x] Implement sharding for parallel processing
+- [x] Implement API endpoints for balance queries
+- [x] Implement metrics collection
+
+## Optional Enhancements
+- [ ] Add authentication for admin endpoints
+- [ ] Implement Prometheus metrics export
+- [ ] Add support for filtering events by smart contract
+- [ ] Create a dashboard for monitoring the indexer
+- [ ] Add support for historical balance queries (at specific block number)
+- [ ] Improve error handling and recovery
+- [ ] Add comprehensive test suite
+- [ ] Deploy with Docker and Docker Compose
