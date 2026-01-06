@@ -1,0 +1,129 @@
+{
+  "common": {
+    "loading": "Učitavanje...",
+    "error": "Greška",
+    "success": "Uspjeh",
+    "confirm": "Potvrdi",
+    "cancel": "Otkaži",
+    "save": "Sačuvaj",
+    "close": "Zatvori",
+    "back": "Nazad",
+    "next": "Dalje",
+    "done": "Gotovo",
+    "continue": "Nastavi"
+  },
+  "welcome": {
+    "title": "Investirajte u Tokene sa Podjelom Profita",
+    "description": "Budite dio decentralizovanih finansija u poljoprivredi. Kupite Tokene, ostvarite godišnji prinos baziran na stvarnim prihodima farmera",
+    "features": {
+      "secure": "Sigurno i Transparentno",
+      "rewards": "Nagrade sa Podjelom Profita",
+      "invest": "Investirajte u male biznise"
+    },
+    "connectWallet": "Povežite Novčanik",
+    "connecting": "Povezivanje...",
+    "walletConnected": "Novčanik Povezan"
+  },
+  "wallet": {
+    "title": "Novčanik",
+    "totalBalance": "Ukupno Stanje",
+    "yourWalletAddress": "Vaša Adresa Novčanika",
+    "copied": "Kopirano",
+    "notConnected": "Nije povezano",
+    "tokens": "Tokeni",
+    "transactions": "Transakcije",
+    "viewAll": "Prikaži Sve Transakcije",
+    "claimReward": "Preuzmite {{amount}} TON Nagradu",
+    "rewardClaimed": "Nagrada Preuzeta!",
+    "rewardMessage": "{{amount}} TON je dodato vašem novčaniku. Počnite sa trgovanjem!",
+    "claimedAmount": "Preuzeti Iznos"
+  },
+  "tokens": {
+    "title": "Tokeni",
+    "balance": "Stanje",
+    "price": "Cijena",
+    "value": "Vrijednost",
+    "buy": "Kupi",
+    "sell": "Prodaj",
+    "trade": "Trguj",
+    "totalPortfolioValue": "Ukupna Vrijednost Portfolija",
+    "totalInvestmentReturned": "Ukupan Povrat Investicije",
+    "upcomingTokens": "Nadolazeći Tokeni",
+    "noUpcomingTokens": "Nema Nadolazećih Tokena"
+  },
+  "transactions": {
+    "sent": "Poslato",
+    "received": "Primljeno",
+    "bought": "Kupljeno",
+    "sold": "Prodato",
+    "today": "Danas",
+    "yesterday": "Juče",
+    "pending": "Na čekanju",
+    "completed": "Završeno"
+  },
+  "mkoin": {
+    "info": "MKOIN je stablecoin vezan za EUR (1 MKOIN = 1 EUR). Koristite ga za kupovinu i prodaju tokena na platformi.",
+    "buy": "Kupi MKOIN",
+    "sell": "Prodaj MKOIN",
+    "buyTitle": "Kupite MKOIN",
+    "sellTitle": "Prodajte MKOIN",
+    "amount": "Iznos",
+    "amountEUR": "Iznos (EUR)",
+    "amountMKOIN": "Iznos (MKOIN)",
+    "youWillReceive": "Primićete",
+    "transferTo": "Prenesite na",
+    "yourBankDetails": "Vaši Bankovni Podaci",
+    "bankName": "Naziv Banke",
+    "accountName": "Ime Vlasnika Računa",
+    "accountNumber": "Broj Računa",
+    "iban": "IBAN",
+    "yourAddress": "Vaša Adresa",
+    "saveBankDetails": "Sačuvajte bankovne podatke za buduće transakcije",
+    "useSavedDetails": "Koristite sačuvane bankovne podatke",
+    "transferInfo": "Nakon transfera, vaš MKOIN će biti uplaćen u roku od 1-2 radna dana.",
+    "saleInfo": "Sredstva će biti preneta na vaš račun u roku od 1-2 radna dana.",
+    "confirmTransfer": "Potvrdite Prenos",
+    "confirmSale": "Potvrdite Prodaju",
+    "purchaseConfirmed": "Kupovina Potvrđena!",
+    "saleConfirmed": "Prodaja Potvrđena!",
+    "purchaseMessage": "Vaša kupovina MKOIN-a je poslata. Tokeni će biti uplaćeni na vaš novčanik u roku od 1-2 radna dana.",
+    "saleMessage": "Vaša prodaja MKOIN-a je poslata. Sredstva će biti preneta na vaš bankovni račun u roku od 1-2 radna dana.",
+    "purchased": "Kupljeno",
+    "transactionNotification": "Primićete obavještenje kada se transakcija završi."
+  },
+  "profile": {
+    "farmMode": "Farm Mod",
+    "comingSoon": "Uskoro",
+    "farmModeMessage": "Farm Mod je na putu!",
+    "contactToList": "Kontaktirajte @ivanori da listate vaš token",
+    "settings": "Podešavanja",
+    "about": "O Nama",
+    "logout": "Odjavi se",
+    "language": "Jezik",
+    "theme": "Tema",
+    "dark": "Tamna",
+    "light": "Svijetla",
+    "contactSupport": "Kontaktirajte Podršku",
+    "version": "Verzija"
+  },
+  "about": {
+    "title": "O CoinNovac",
+    "description": "Platforma za Poljoprivredne DeFi"
+  },
+  "trade": {
+    "title": "Trgovina",
+    "buy": "Kupi",
+    "sell": "Prodaj",
+    "amount": "Iznos",
+    "total": "Ukupno",
+    "available": "Dostupno",
+    "orderBook": "Knjiga Narudžbi",
+    "recentTrades": "Nedavne Trgovine"
+  },
+  "errors": {
+    "connectionFailed": "Povezivanje neuspješno",
+    "transactionFailed": "Transakcija neuspješna",
+    "invalidAmount": "Neispravan iznos",
+    "insufficientBalance": "Nedovoljno sredstava"
+  }
+}

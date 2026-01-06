@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ProfileButton } from '../ProfileButton';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { formatAddress, convertToUserFriendly } from '../../utils/tonAddress';
 
 interface WalletHeaderProps {
@@ -12,6 +13,7 @@ interface WalletHeaderProps {
 
 export function WalletHeader({ walletAddress, totalBalance, onNavigateToAbout }: WalletHeaderProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -33,7 +35,7 @@ export function WalletHeader({ walletAddress, totalBalance, onNavigateToAbout }:
     }`}>
       <div className="flex items-center justify-between p-4">
         <h1 className={`text-xl font-semibold ${theme === 'Light' ? 'text-gray-900' : 'text-white'}`}>
-          Wallet
+          {t('wallet.title')}
         </h1>
         <ProfileButton onNavigateToAbout={onNavigateToAbout} />
       </div>
@@ -42,7 +44,7 @@ export function WalletHeader({ walletAddress, totalBalance, onNavigateToAbout }:
         {/* Total Balance */}
         <div>
           <p className={`text-sm ${theme === 'Light' ? 'text-gray-600' : 'text-white/60'}`}>
-            Total Balance
+            {t('wallet.totalBalance')}
           </p>
           <p className={`text-3xl font-bold ${theme === 'Light' ? 'text-gray-900' : 'text-white'}`}>
             €{totalBalance}
@@ -76,7 +78,7 @@ export function WalletHeader({ walletAddress, totalBalance, onNavigateToAbout }:
                 />
               </svg>
               <span className={`text-sm ${theme === 'Light' ? 'text-green-600' : 'text-green-400'}`}>
-                Copied
+                {t('wallet.copied')}
               </span>
             </div>
           ) : (

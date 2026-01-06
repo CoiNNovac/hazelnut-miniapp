@@ -1,0 +1,129 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "continue": "Continue"
+  },
+  "welcome": {
+    "title": "Invest in Profit Sharing Tokens",
+    "description": "Be a part of the agriculture decentralized finance. Buy Tokens, get yearly yield based on farmers real revenues",
+    "features": {
+      "secure": "Secure & Transparent",
+      "rewards": "Profit Sharing Rewards",
+      "invest": "Invest in small business"
+    },
+    "connectWallet": "Connect Wallet",
+    "connecting": "Connecting...",
+    "walletConnected": "Wallet Connected"
+  },
+  "wallet": {
+    "title": "Wallet",
+    "totalBalance": "Total Balance",
+    "yourWalletAddress": "Your Wallet Address",
+    "copied": "Copied",
+    "notConnected": "Not connected",
+    "tokens": "Tokens",
+    "transactions": "Transactions",
+    "viewAll": "View All Transactions",
+    "claimReward": "Claim {{amount}} TON Reward",
+    "rewardClaimed": "Reward Claimed!",
+    "rewardMessage": "{{amount}} TON has been added to your wallet. Start trading now!",
+    "claimedAmount": "Claimed Amount"
+  },
+  "tokens": {
+    "title": "Tokens",
+    "balance": "Balance",
+    "price": "Price",
+    "value": "Value",
+    "buy": "Buy",
+    "sell": "Sell",
+    "trade": "Trade",
+    "totalPortfolioValue": "Total Portfolio Value",
+    "totalInvestmentReturned": "Total Investment Returned",
+    "upcomingTokens": "Upcoming Tokens",
+    "noUpcomingTokens": "No Upcoming Tokens"
+  },
+  "transactions": {
+    "sent": "Sent",
+    "received": "Received",
+    "bought": "Bought",
+    "sold": "Sold",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "pending": "Pending",
+    "completed": "Completed"
+  },
+  "mkoin": {
+    "info": "MKOIN is a stablecoin pegged to EUR (1 MKOIN = 1 EUR). Use it to buy and sell tokens on the platform.",
+    "buy": "Buy MKOIN",
+    "sell": "Sell MKOIN",
+    "buyTitle": "Buy MKOIN",
+    "sellTitle": "Sell MKOIN",
+    "amount": "Amount",
+    "amountEUR": "Amount (EUR)",
+    "amountMKOIN": "Amount (MKOIN)",
+    "youWillReceive": "You will receive",
+    "transferTo": "Transfer to",
+    "yourBankDetails": "Your Bank Details",
+    "bankName": "Bank Name",
+    "accountName": "Account Name",
+    "accountNumber": "Account Number",
+    "iban": "IBAN",
+    "yourAddress": "Your Address",
+    "saveBankDetails": "Save bank details for future transactions",
+    "useSavedDetails": "Use saved bank details",
+    "transferInfo": "After transferring, your MKOIN will be credited within 1-2 business days.",
+    "saleInfo": "Funds will be transferred to your account within 1-2 business days.",
+    "confirmTransfer": "Confirm Transfer",
+    "confirmSale": "Confirm Sale",
+    "purchaseConfirmed": "Purchase Confirmed!",
+    "saleConfirmed": "Sale Confirmed!",
+    "purchaseMessage": "Your MKOIN purchase has been submitted. The tokens will be credited to your wallet within 1-2 business days.",
+    "saleMessage": "Your MKOIN sale has been submitted. The funds will be transferred to your bank account within 1-2 business days.",
+    "purchased": "Purchased",
+    "transactionNotification": "You will receive a notification once the transaction is complete."
+  },
+  "profile": {
+    "farmMode": "Farm Mode",
+    "comingSoon": "Coming Soon",
+    "farmModeMessage": "Farm Mode is on the way!",
+    "contactToList": "Contact @ivanori to list your token",
+    "settings": "Settings",
+    "about": "About",
+    "logout": "Logout",
+    "language": "Language",
+    "theme": "Theme",
+    "dark": "Dark",
+    "light": "Light",
+    "contactSupport": "Contact Support",
+    "version": "Version"
+  },
+  "about": {
+    "title": "About CoinNovac",
+    "description": "Agricultural DeFi Platform"
+  },
+  "trade": {
+    "title": "Trade",
+    "buy": "Buy",
+    "sell": "Sell",
+    "amount": "Amount",
+    "total": "Total",
+    "available": "Available",
+    "orderBook": "Order Book",
+    "recentTrades": "Recent Trades"
+  },
+  "errors": {
+    "connectionFailed": "Connection failed",
+    "transactionFailed": "Transaction failed",
+    "invalidAmount": "Invalid amount",
+    "insufficientBalance": "Insufficient balance"
+  }
+}

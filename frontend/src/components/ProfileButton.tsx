@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Wheat, Settings, ChevronRight, X, Info, LogOut } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface ProfileButtonProps {
   onNavigateToAbout?: () => void;
@@ -12,11 +14,12 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
-  const [language, setLanguage] = useState<'EN' | 'SRB'>('EN');
   const [telegramName, setTelegramName] = useState<string | null>(null);
   const [telegramPhoto, setTelegramPhoto] = useState<string | null>(null);
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage } = useLanguage();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Get Telegram user data
@@ -128,15 +131,15 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
               >
                 <div className="text-center px-4">
                   <Wheat size={48} className="text-[#F47621] mx-auto mb-3" />
-                  <p className={`font-medium text-lg ${theme === 'Light' ? 'text-gray-900' : 'text-white'}`}>Coming Soon</p>
-                  <p className={`text-sm mt-1 mb-4 ${theme === 'Light' ? 'text-gray-600' : 'text-white/60'}`}>Farm Mode is on the way!</p>
+                  <p className={`font-medium text-lg ${theme === 'Light' ? 'text-gray-900' : 'text-white'}`}>{t('profile.comingSoon')}</p>
+                  <p className={`text-sm mt-1 mb-4 ${theme === 'Light' ? 'text-gray-600' : 'text-white/60'}`}>{t('profile.farmModeMessage')}</p>
                   <a
                     href="https://t.me/ivanori"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-block bg-gradient-to-r from-[#F47621] to-[#d66a1e] text-white rounded-lg px-4 py-2.5 text-sm font-medium"
                   >
-                    Contact @ivanori to list your token
+                    {t('profile.contactToList')}
                   </a>
                 </div>
               </motion.div>
@@ -162,11 +165,11 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
                     className="w-full bg-gradient-to-r from-[#F47621] to-[#d66a1e] text-white rounded-xl px-4 py-3 mb-2 flex items-center gap-3"
                   >
                     <Wheat size={20} />
-                    <span className="font-medium">Farm Mode</span>
+                    <span className="font-medium">{t('profile.farmMode')}</span>
                   </button>
 
                   {/* Settings Button */}
-                  <button 
+                  <button
                     onClick={() => setShowSettings(true)}
                     className={`w-full rounded-xl px-4 py-3 flex items-center justify-between ${
                       theme === 'Light'
@@ -176,7 +179,7 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
                   >
                     <div className="flex items-center gap-3">
                       <Settings size={20} />
-                      <span>Settings</span>
+                      <span>{t('profile.settings')}</span>
                     </div>
                     <ChevronRight size={16} className={theme === 'Light' ? 'text-gray-400' : 'text-white/40'} />
                   </button>
@@ -195,7 +198,7 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
                   >
                     <div className="flex items-center gap-3">
                       <Info size={20} />
-                      <span>About</span>
+                      <span>{t('profile.about')}</span>
                     </div>
                     <ChevronRight size={16} className={theme === 'Light' ? 'text-gray-400' : 'text-white/40'} />
                   </button>
@@ -213,7 +216,7 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
                     }`}
                   >
                     <LogOut size={20} />
-                    <span>Logout</span>
+                    <span>{t('profile.logout')}</span>
                   </button>
                 </div>
               </>
@@ -225,8 +228,8 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
                     ? 'border-gray-200'
                     : 'border-white/10'
                 }`}>
-                  <h3 className={`font-medium ${theme === 'Light' ? 'text-gray-900' : 'text-white'}`}>Settings</h3>
-                  <button 
+                  <h3 className={`font-medium ${theme === 'Light' ? 'text-gray-900' : 'text-white'}`}>{t('profile.settings')}</h3>
+                  <button
                     onClick={() => setShowSettings(false)}
                     className={theme === 'Light' ? 'text-gray-600' : 'text-white/60'}
                   >
@@ -238,12 +241,12 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
                 <div className="p-2">
                   {/* Language */}
                   <div className="mb-4">
-                    <label className={`text-sm px-3 block mb-2 ${theme === 'Light' ? 'text-gray-600' : 'text-white/60'}`}>Language</label>
+                    <label className={`text-sm px-3 block mb-2 ${theme === 'Light' ? 'text-gray-600' : 'text-white/60'}`}>{t('profile.language')}</label>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => setLanguage('EN')}
+                        onClick={() => setLanguage('en')}
                         className={`flex-1 py-2.5 rounded-lg ${
-                          language === 'EN'
+                          language === 'en'
                             ? 'bg-[#F47621] text-white'
                             : theme === 'Light'
                             ? 'bg-gray-100 text-gray-600'
@@ -253,9 +256,9 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
                         EN
                       </button>
                       <button
-                        onClick={() => setLanguage('SRB')}
+                        onClick={() => setLanguage('me')}
                         className={`flex-1 py-2.5 rounded-lg ${
-                          language === 'SRB'
+                          language === 'me'
                             ? 'bg-[#F47621] text-white'
                             : theme === 'Light'
                             ? 'bg-gray-100 text-gray-600'
@@ -269,7 +272,7 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
 
                   {/* Theme */}
                   <div className="mb-4">
-                    <label className={`text-sm px-3 block mb-2 ${theme === 'Light' ? 'text-gray-600' : 'text-white/60'}`}>Theme</label>
+                    <label className={`text-sm px-3 block mb-2 ${theme === 'Light' ? 'text-gray-600' : 'text-white/60'}`}>{t('profile.theme')}</label>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setTheme('Dark')}
@@ -281,7 +284,7 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
                             : 'bg-white/5 text-white/60'
                         }`}
                       >
-                        Dark
+                        {t('profile.dark')}
                       </button>
                       <button
                         onClick={() => setTheme('Light')}
@@ -291,7 +294,7 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
                             : 'bg-white/5 text-white/60'
                         }`}
                       >
-                        Light
+                        {t('profile.light')}
                       </button>
                     </div>
                   </div>
@@ -307,13 +310,13 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
                         : 'text-white/80'
                     }`}
                   >
-                    <span>Contact Support</span>
+                    <span>{t('profile.contactSupport')}</span>
                     <span className="text-[#F47621]">@ivanori</span>
                   </a>
 
                   {/* Version */}
                   <div className="px-4 py-2 text-center">
-                    <p className={`text-xs ${theme === 'Light' ? 'text-gray-400' : 'text-white/40'}`}>Version 1.0.0</p>
+                    <p className={`text-xs ${theme === 'Light' ? 'text-gray-400' : 'text-white/40'}`}>{t('profile.version')} 1.0.0</p>
                   </div>
                 </div>
               </>

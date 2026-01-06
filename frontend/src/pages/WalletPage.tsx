@@ -2,6 +2,7 @@ import { useState, useImperativeHandle } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useBankAccount } from '../contexts/BankAccountContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { ScrollIndicator } from '../components/ScrollIndicator';
 import { WalletTokenDetailPage } from './WalletTokenDetailPage';
 import {
@@ -134,6 +135,7 @@ interface WalletPageProps {
 
 export function WalletPage({ onNavigateToAbout, resetRef }: WalletPageProps = {}) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const { bankDetails, saveBankDetails: saveBankDetailsToContext } = useBankAccount();
   const { walletAddress } = useAuth();
 
@@ -255,7 +257,7 @@ export function WalletPage({ onNavigateToAbout, resetRef }: WalletPageProps = {}
                     : 'text-white/60'
                 }`}
               >
-                Tokens
+                {t('wallet.tokens')}
               </button>
               <button
                 onClick={() => setActiveView('transactions')}
@@ -267,7 +269,7 @@ export function WalletPage({ onNavigateToAbout, resetRef }: WalletPageProps = {}
                     : 'text-white/60'
                 }`}
               >
-                Transactions
+                {t('wallet.transactions')}
               </button>
             </div>
           </div>

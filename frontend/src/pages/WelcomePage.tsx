@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 
 const logo = '/assets/logo.svg';
@@ -11,6 +12,7 @@ interface WelcomePageProps {
 
 export function WelcomePage({ onGetStarted }: WelcomePageProps) {
   const { connectWallet, walletConnected } = useAuth();
+  const { t } = useTranslation();
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Auto-navigate when wallet is connected (including on page reload)
@@ -52,10 +54,10 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
           className="text-center space-y-3 w-full px-4"
         >
           <h1 className="text-[#1A1B41]">
-            Invest in Profit Sharing Tokens
+            {t('welcome.title')}
           </h1>
           <p className="text-[#1A1B41]/70">
-            Be a part of the agriculture decentralized finance. Buy Tokens, get yearly yield based on farmers real revenues
+            {t('welcome.description')}
           </p>
         </motion.div>
 
@@ -83,7 +85,7 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
                 />
               </svg>
             </div>
-            <span className="text-[#1A1B41]">Secure & Transparent</span>
+            <span className="text-[#1A1B41]">{t('welcome.features.secure')}</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-[#F47621] flex items-center justify-center flex-shrink-0">
@@ -103,7 +105,7 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
                 />
               </svg>
             </div>
-            <span className="text-[#1A1B41]">Profit Sharing Rewards</span>
+            <span className="text-[#1A1B41]">{t('welcome.features.rewards')}</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-[#F47621] flex items-center justify-center flex-shrink-0">
@@ -123,7 +125,7 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
                 />
               </svg>
             </div>
-            <span className="text-[#1A1B41]">Invest in small business</span>
+            <span className="text-[#1A1B41]">{t('welcome.features.invest')}</span>
           </div>
         </motion.div>
       </div>
@@ -139,7 +141,7 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
           disabled={isConnecting || walletConnected}
           className="w-full h-14 bg-[#F47621] text-white rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isConnecting ? 'Connecting...' : walletConnected ? 'Wallet Connected' : 'Connect Wallet'}
+          {isConnecting ? t('welcome.connecting') : walletConnected ? t('welcome.walletConnected') : t('welcome.connectWallet')}
         </Button>
       </motion.div>
     </div>

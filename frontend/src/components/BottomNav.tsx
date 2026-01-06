@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 interface BottomNavProps {
   activeTab: 'tokens' | 'trade' | 'wallet';
@@ -8,7 +9,8 @@ interface BottomNavProps {
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   const { theme } = useTheme();
-  
+  const { t } = useTranslation();
+
   return (
     <div className={`relative border-t ${
       theme === 'Light'
@@ -33,7 +35,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               <path d="M5 12V16C5 17.6569 8.13401 19 12 19C15.866 19 19 17.6569 19 16V12" stroke="currentColor" strokeWidth="2" fill="none"/>
             </svg>
           }
-          label="Tokens"
+          label={t('tokens.title')}
         />
 
         <NavButton
@@ -53,7 +55,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               <path d="M16 14L16 21M16 21L13 18M16 21L19 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           }
-          label="Trade"
+          label={t('trade.title')}
           isCenter
         />
 
@@ -91,7 +93,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               />
             </svg>
           }
-          label="Wallet"
+          label={t('wallet.title')}
         />
       </div>
     </div>
