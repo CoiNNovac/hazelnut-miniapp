@@ -13,15 +13,15 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
   const { connectWallet, walletConnected } = useAuth();
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Auto-navigate when wallet is connected
+  // Auto-navigate when wallet is connected (including on page reload)
   useEffect(() => {
-    if (walletConnected && isConnecting) {
-      // Wallet just connected, navigate to home
+    if (walletConnected) {
+      // Wallet is connected, navigate to home
       setTimeout(() => {
         onGetStarted();
       }, 500);
     }
-  }, [walletConnected, isConnecting, onGetStarted]);
+  }, [walletConnected, onGetStarted]);
 
   const handleConnect = async () => {
     try {
