@@ -4,24 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { ProfileButton } from '../components/ProfileButton';
-
-interface Token {
-  id: number;
-  name: string;
-  symbol: string;
-  price: number;
-  logo: string;
-  balance: number;
-  endTime: number;
-  tag: string;
-  tagColor: string;
-  issuer?: {
-    name: string;
-    farmAddress: string;
-    yearsOfExperience: number;
-    licenseNumber: string;
-  };
-}
+import type { Token } from '../types';
 
 interface TokenDetailsPageProps {
   token: Token;
@@ -102,7 +85,7 @@ export function TokenDetailsPage({ token, onBack, onBuyNow }: TokenDetailsPagePr
     
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
-      const distance = token.endTime - now;
+      const distance = (token.endTime || 0) - now;
 
       if (distance < 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -449,11 +432,11 @@ export function TokenDetailsPage({ token, onBack, onBuyNow }: TokenDetailsPagePr
               <span className={theme === 'Light' ? 'text-gray-600' : 'text-white/60'}>{token.symbol}</span>
             </div>
             <div className={`text-3xl ${theme === 'Light' ? 'text-gray-900' : 'text-white'}`}>
-              {((token.balance / maxTokens) * 100).toFixed(2)}%
+              {(((token.balance || 0) / maxTokens) * 100).toFixed(2)}%
             </div>
           </div>
           <div className={`mt-2 ${theme === 'Light' ? 'text-gray-600' : 'text-white/60'}`}>
-            ≈ €{(token.balance * token.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ≈ €{((token.balance || 0) * token.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </motion.div>
 
@@ -512,7 +495,7 @@ export function TokenDetailsPage({ token, onBack, onBuyNow }: TokenDetailsPagePr
           }
 
           const totalReceivedAllYears = yearlyReturns.reduce((sum, year) => sum + year.totalReceived, 0);
-          const totalInvestmentValue = token.balance * token.price;
+          const totalInvestmentValue = (token.balance || 0) * token.price;
           const totalReturnPercentage = (totalReceivedAllYears / totalInvestmentValue) * 100;
           
           return (

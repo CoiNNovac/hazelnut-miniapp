@@ -3,11 +3,13 @@ import { Button } from '../components/ui/Button';
 import { ProfileButton } from '../components/ProfileButton';
 import { useTheme } from '../contexts/ThemeContext';
 import { useBankAccount } from '../contexts/BankAccountContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useState, useImperativeHandle } from 'react';
 import { MKOINLogo } from '../components/MKOINLogo';
 import { ScrollIndicator } from '../components/ScrollIndicator';
 import { ArrowLeft, Gift, Plus, Minus, Copy, Check } from 'lucide-react';
 import { WalletTokenDetailPage } from './WalletTokenDetailPage';
+import { Address } from '@ton/core';
 
 const tonIcon = '/assets/ton-icon.svg';
 
@@ -261,7 +263,22 @@ interface WalletPageProps {
 export function WalletPage({ onNavigateToAbout, resetRef }: WalletPageProps = {}) {
   const { theme } = useTheme();
   const { bankDetails, saveBankDetails: saveBankDetailsToContext } = useBankAccount();
+  const { walletAddress } = useAuth();
   const [copied, setCopied] = useState(false);
+
+  // Format wallet address to show first 3 and last 4 characters
+  const formatWalletAddress = (address: string | null) => {
+    if (!address) return 'Not connected';
+    try {
+      // Convert to user-friendly format
+      const parsedAddress = Address.parse(address);
+      const userFriendly = parsedAddress.toString({ bounceable: true, urlSafe: true });
+      return `${userFriendly.slice(0, 3)}...${userFriendly.slice(-4)}`;
+    } catch (error) {
+      // Fallback to raw format if parsing fails
+      return `${address.slice(0, 3)}...${address.slice(-4)}`;
+    }
+  };
   const [showTokenInfo, setShowTokenInfo] = useState<string | null>(null);
   const [showClaimSuccess, setShowClaimSuccess] = useState(false);
   const [tonClaimed, setTonClaimed] = useState(false);
@@ -298,10 +315,21 @@ export function WalletPage({ onNavigateToAbout, resetRef }: WalletPageProps = {}
   });
   
   const handleCopy = () => {
-    setCopied(true);
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
+    if (walletAddress) {
+      try {
+        // Convert to user-friendly format before copying
+        const parsedAddress = Address.parse(walletAddress);
+        const userFriendly = parsedAddress.toString({ bounceable: true, urlSafe: true });
+        navigator.clipboard.writeText(userFriendly);
+      } catch (error) {
+        // Fallback to raw format if parsing fails
+        navigator.clipboard.writeText(walletAddress);
+      }
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    }
   };
   
   const handleClaimTon = () => {
@@ -727,7 +755,7 @@ export function WalletPage({ onNavigateToAbout, resetRef }: WalletPageProps = {}
                 </div>
               ) : (
                 <code className={`flex-1 text-center text-sm ${theme === 'Light' ? 'text-gray-900' : 'text-white'}`}>
-                  UQA...x7k2
+                  {formatWalletAddress(walletAddress)}
                 </code>
               )}
               <button className="flex-shrink-0 p-1 rounded-lg" onClick={handleCopy}>

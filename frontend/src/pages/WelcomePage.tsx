@@ -1,5 +1,7 @@
 import { motion } from 'motion/react';
 import { Button } from '../components/ui/Button';
+import { useAuth } from '../contexts/AuthContext';
+import { useState, useEffect } from 'react';
 
 const logo = '/assets/logo.svg';
 
@@ -8,6 +10,29 @@ interface WelcomePageProps {
 }
 
 export function WelcomePage({ onGetStarted }: WelcomePageProps) {
+  const { connectWallet, walletConnected } = useAuth();
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  // Auto-navigate when wallet is connected
+  useEffect(() => {
+    if (walletConnected && isConnecting) {
+      // Wallet just connected, navigate to home
+      setTimeout(() => {
+        onGetStarted();
+      }, 500);
+    }
+  }, [walletConnected, isConnecting, onGetStarted]);
+
+  const handleConnect = async () => {
+    try {
+      setIsConnecting(true);
+      await connectWallet();
+      // Don't navigate here - let the useEffect handle it when wallet connects
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+      setIsConnecting(false);
+    }
+  };
   return (
     <div className="w-full h-full flex flex-col items-center justify-between p-6 bg-white">
       <div className="flex-1 flex flex-col items-center justify-center gap-6 w-full">
@@ -110,10 +135,11 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
         className="w-full pb-4"
       >
         <Button
-          onClick={onGetStarted}
-          className="w-full h-14 bg-[#F47621] text-white rounded-2xl"
+          onClick={handleConnect}
+          disabled={isConnecting || walletConnected}
+          className="w-full h-14 bg-[#F47621] text-white rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Connect Wallet
+          {isConnecting ? 'Connecting...' : walletConnected ? 'Wallet Connected' : 'Connect Wallet'}
         </Button>
       </motion.div>
     </div>

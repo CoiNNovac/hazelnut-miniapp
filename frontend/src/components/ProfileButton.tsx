@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Wheat, Settings, ChevronRight, X, Info } from 'lucide-react';
+import { Wheat, Settings, ChevronRight, X, Info, LogOut } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ProfileButtonProps {
   onNavigateToAbout?: () => void;
@@ -11,31 +12,38 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
-  const [userName, setUserName] = useState('User');
-  const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [language, setLanguage] = useState<'EN' | 'SRB'>('EN');
+  const [telegramName, setTelegramName] = useState<string | null>(null);
+  const [telegramPhoto, setTelegramPhoto] = useState<string | null>(null);
   const { theme, setTheme } = useTheme();
+  const { user, logout } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Get Telegram user data
   useEffect(() => {
-    // Try to get Telegram user data
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
       const tg = (window as any).Telegram.WebApp;
-      const user = tg.initDataUnsafe?.user;
-      
-      if (user) {
-        const firstName = user.first_name || '';
-        const lastName = user.last_name || '';
-        setUserName(firstName + (lastName ? ' ' + lastName : ''));
-        
-        // Note: Telegram Mini Apps don't provide direct access to profile photos
-        // You would need to use the Bot API on your backend to fetch the photo
-        if (user.photo_url) {
-          setUserPhoto(user.photo_url);
+      const tgUser = tg.initDataUnsafe?.user;
+
+      console.log('Telegram WebApp data:', tg.initDataUnsafe);
+
+      if (tgUser) {
+        const firstName = tgUser.first_name || '';
+        const lastName = tgUser.last_name || '';
+        const fullName = firstName + (lastName ? ' ' + lastName : '');
+        setTelegramName(fullName);
+
+        if (tgUser.photo_url) {
+          setTelegramPhoto(tgUser.photo_url);
         }
       }
     }
   }, []);
+
+  // Get user name and photo - prioritize Telegram data, then AuthContext
+  const userName = telegramName ||
+    (user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : 'User');
+  const userPhoto = telegramPhoto || user?.photoUrl || null;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -75,13 +83,22 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
       {/* Profile Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F47621] to-[#d66a1e] flex items-center justify-center text-white font-medium overflow-hidden"
+        className="flex items-center gap-2 group"
       >
-        {userPhoto ? (
-          <img src={userPhoto} alt={userName} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-sm">{getInitials(userName)}</span>
-        )}
+        <span className={`text-sm font-medium transition-colors ${
+          theme === 'Light'
+            ? 'text-gray-700 group-hover:text-gray-900'
+            : 'text-white/80 group-hover:text-white'
+        }`}>
+          {userName}
+        </span>
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F47621] to-[#d66a1e] flex items-center justify-center text-white font-medium overflow-hidden flex-shrink-0">
+          {userPhoto ? (
+            <img src={userPhoto} alt={userName} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-sm">{getInitials(userName)}</span>
+          )}
+        </div>
       </button>
 
       {/* Dropdown Menu */}
@@ -165,7 +182,7 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
                   </button>
 
                   {/* About Button */}
-                  <button 
+                  <button
                     onClick={() => {
                       setIsOpen(false);
                       onNavigateToAbout?.();
@@ -181,6 +198,22 @@ export function ProfileButton({ onNavigateToAbout }: ProfileButtonProps = {}) {
                       <span>About</span>
                     </div>
                     <ChevronRight size={16} className={theme === 'Light' ? 'text-gray-400' : 'text-white/40'} />
+                  </button>
+
+                  {/* Logout Button */}
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsOpen(false);
+                    }}
+                    className={`w-full rounded-xl px-4 py-3 flex items-center gap-3 transition-colors ${
+                      theme === 'Light'
+                        ? 'text-red-600 active:bg-red-50'
+                        : 'text-red-400 active:bg-red-500/10'
+                    }`}
+                  >
+                    <LogOut size={20} />
+                    <span>Logout</span>
                   </button>
                 </div>
               </>

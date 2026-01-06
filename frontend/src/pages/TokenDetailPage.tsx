@@ -90,22 +90,18 @@ export default function TokenDetailPage() {
             <div className="space-y-3 text-sm">
               <div>
                 <span className="text-text-muted">Farm Address:</span>
-                <p className="text-white mt-1">{token.issuer.location}</p>
+                <p className="text-white mt-1">{token.issuer.farmAddress}</p>
               </div>
 
-              {token.issuer.experience && (
-                <div>
-                  <span className="text-text-muted">Experience:</span>
-                  <p className="text-white mt-1">{token.issuer.experience}</p>
-                </div>
-              )}
+              <div>
+                <span className="text-text-muted">Experience:</span>
+                <p className="text-white mt-1">{token.issuer.yearsOfExperience} years in agriculture</p>
+              </div>
 
-              {token.issuer.license && (
-                <div>
-                  <span className="text-text-muted">Agricultural License:</span>
-                  <p className="text-white mt-1 font-mono">{token.issuer.license}</p>
-                </div>
-              )}
+              <div>
+                <span className="text-text-muted">Agricultural License:</span>
+                <p className="text-white mt-1 font-mono">{token.issuer.licenseNumber}</p>
+              </div>
             </div>
           </div>
         </section>

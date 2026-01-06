@@ -62,12 +62,26 @@ export function TokensPage({ onNavigateToTrade, onNavigateToTradeWithToken, onNa
   const totalValue = yourTokensData.reduce((sum, token) => sum + token.value, 0);
   const isLoading = tokensLoading || purchasesLoading;
 
-  // Expose reset function via ref
+  // Expose reset function via ref (must be before early returns)
   useEffect(() => {
     if (resetRef) {
       resetRef.current = () => setSelectedToken(null);
     }
   }, [resetRef]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className={`h-full flex items-center justify-center ${
+        theme === 'Light' ? 'bg-gray-50' : 'bg-[#1A1B41]'
+      }`}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F47621] mx-auto mb-4"></div>
+          <p className={theme === 'Light' ? 'text-gray-600' : 'text-white/60'}>Loading tokens...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (selectedToken) {
     return (

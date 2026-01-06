@@ -40,6 +40,17 @@ class MockApiClient {
     return { user: this.user || mockUser };
   }
 
+  async updateWalletAddress(walletAddress: string): Promise<{ user: User }> {
+    await delay();
+    if (!this.getAuthToken()) {
+      throw new Error('Unauthorized');
+    }
+    if (this.user) {
+      this.user.walletAddress = walletAddress;
+    }
+    return { user: this.user || mockUser };
+  }
+
   // Token endpoints
   async getTokens(): Promise<{ tokens: Token[] }> {
     await delay();

@@ -23,10 +23,10 @@ export interface FAQItem {
 
 export interface TokenIssuer {
   name: string;
-  location: string;
-  verified: boolean;
-  experience?: string;
-  license?: string;
+  farmAddress: string;
+  yearsOfExperience: number;
+  licenseNumber: string;
+  verified?: boolean;
 }
 
 export interface TokenDistribution {
@@ -62,6 +62,12 @@ export interface Token {
   distribution?: TokenDistribution[];
   telegramChannel?: string;
   yearlyYields?: YearlyYield[];
+  // UI-specific optional properties
+  balance?: number; // User's token balance
+  value?: number; // Calculated value (balance * price)
+  endTime?: number; // Sale end timestamp (milliseconds)
+  tag?: string; // UI tag (e.g., "New", "Hot")
+  tagColor?: string; // Tailwind class for tag color
 }
 
 export interface Purchase {
