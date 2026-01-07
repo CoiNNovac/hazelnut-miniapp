@@ -1,4 +1,6 @@
 use crate::db::Database;
+use crate::cache::CacheService;
+use crate::ton::minting::MintingService;
 use anyhow::Result;
 use axum::{
     Json, Router,
@@ -8,6 +10,9 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use tower_http::cors::{CorsLayer, Any};
+
+mod admin;
 
 // Core Data Structures
 #[derive(Debug, Serialize, Deserialize)]
@@ -49,12 +54,26 @@ pub struct DistributionRequest {
 
 pub struct AppState {
     pub db: Database,
+    pub cache: CacheService,
+    pub minting_service: MintingService,
 }
 
-pub fn router(db: Database) -> Router {
-    let state = Arc::new(AppState { db });
+pub fn router(db: Database, cache: CacheService) -> Router {
+    let minting_service = MintingService::new();
+    let state = Arc::new(AppState {
+        db: db.clone(),
+        cache,
+        minting_service,
+    });
+
+    // Configure CORS to allow requests from admin frontend
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
 
     Router::new()
+        .merge(admin::admin_routes(db))
         .route("/portfolio/{user_address}", get(get_user_portfolio))
         // Public/Protected User Routes
         .route("/users/register", post(register_user))
@@ -63,6 +82,7 @@ pub fn router(db: Database) -> Router {
         .route("/admin/tokens/burn", post(admin_burn_token))
         .route("/admin/tokens/deploy", post(admin_deploy_token))
         .route("/admin/distribution", post(admin_distribute_rewards))
+        .layer(cors)
         .with_state(state)
 }
 
@@ -120,10 +140,16 @@ async fn register_user(
 }
 
 async fn get_user_portfolio(
-    State(_state): State<Arc<AppState>>,
-    Path(_user_address): Path<String>,
+    State(state): State<Arc<AppState>>,
+    Path(user_address): Path<String>,
 ) -> Json<Vec<PortfolioItem>> {
-    Json(vec![
+    let cache_key = format!("portfolio:{}", user_address);
+    if let Some(cached) = state.cache.get_cached::<Vec<PortfolioItem>>(&cache_key).await {
+        return Json(cached);
+    }
+
+    // Mock/Stub Data
+    let portfolio = vec![
         PortfolioItem {
             token_address: "EQ...AgriToken".to_string(),
             symbol: "AGRI".to_string(),
@@ -136,7 +162,13 @@ async fn get_user_portfolio(
             balance: "500.00".to_string(),
             usd_value: Some(500.00),
         },
-    ])
+    ];
+    
+    // In real app, we'd query DB or Indexer here
+    
+    state.cache.set_cached(&cache_key, &portfolio, 30).await; // 30s cache
+
+    Json(portfolio)
 }
 
 async fn admin_mint_token(

@@ -1,11 +1,7 @@
 use anyhow::Result;
 use dotenv::dotenv;
 use tracing::{error, info};
-
-mod api;
-mod config;
-mod db;
-mod ton;
+use web_app::{api, cache, config, db, ton};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -16,6 +12,7 @@ async fn main() -> Result<()> {
 
     let config = config::Config::from_env()?;
     let db = db::Database::new(&config.database_url).await?;
+    let cache = cache::CacheService::new(&config.redis_url)?;
 
     // Run migrations
     sqlx::migrate!("./migrations").run(&db.pool).await?;
@@ -30,7 +27,7 @@ async fn main() -> Result<()> {
     });
 
     // Start API Server
-    let app = api::router(db);
+    let app = api::router(db, cache);
     let addr = format!("{}:{}", config.api_host, config.api_port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 

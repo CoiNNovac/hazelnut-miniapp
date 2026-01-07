@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS _sqlx_migrations (
     execution_time BIGINT NOT NULL
 );"
 
-# Get list of already applied migrations
-APPLIED_MIGRATIONS=$(psql $DB_URL -t -c "SELECT description FROM _sqlx_migrations WHERE success = true ORDER BY version;")
+# Get list of already applied migrations (versions only)
+APPLIED_VERSIONS=$(psql $DB_URL -t -c "SELECT version FROM _sqlx_migrations WHERE success = true;")
 
 # Get sorted list of migration files
 MIGRATION_FILES=$(find migrations -name "*.sql" | sort)
@@ -53,7 +53,7 @@ for MIGRATION_FILE in $MIGRATION_FILES; do
     DESCRIPTION=${DESCRIPTION%.sql}
     
     # Check if migration has already been applied
-    if echo "$APPLIED_MIGRATIONS" | grep -q "$DESCRIPTION"; then
+    if echo "$APPLIED_VERSIONS" | grep -q "$VERSION"; then
         echo "Skipping already applied migration: $FILENAME"
         SKIPPED=$((SKIPPED + 1))
         continue
@@ -62,18 +62,22 @@ for MIGRATION_FILE in $MIGRATION_FILES; do
     echo "Applying migration: $FILENAME"
     
     # Record start time
-    START_TIME=$(date +%s%3N)  # Milliseconds
+    START_TIME=$(date +%s)000
     
     # Run the migration
     psql $DB_URL -f "$MIGRATION_FILE"
     SUCCESS=$?
     
     # Calculate execution time
-    END_TIME=$(date +%s%3N)
+    END_TIME=$(date +%s)000
     EXECUTION_TIME=$((END_TIME - START_TIME))
     
     # Generate a simple checksum
-    CHECKSUM=$(md5sum "$MIGRATION_FILE" | awk '{print $1}')
+    if command -v md5sum >/dev/null 2>&1; then
+        CHECKSUM=$(md5sum "$MIGRATION_FILE" | awk '{print $1}')
+    else
+        CHECKSUM=$(md5 -q "$MIGRATION_FILE")
+    fi
     
     # Record that we've applied this migration
     if [ $SUCCESS -eq 0 ]; then
