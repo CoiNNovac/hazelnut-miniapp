@@ -82,7 +82,7 @@ pub async fn create_purchase(
     // Update portfolio balance
     let token_address = campaign
         .token_address
-        .unwrap_or_else(|| "EQANIErWjj6U4FNgSfEHwR6x-bkkJCV1n5w1OIb-Pf6eWQwD".to_string());
+        .unwrap_or_else(|| "0:00d2042b5a38fa538142608b0c87eaab75780684ca2313066dbc693c954253c9".to_string());
 
     state
         .db

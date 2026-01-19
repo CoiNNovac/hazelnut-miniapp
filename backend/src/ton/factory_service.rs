@@ -75,9 +75,8 @@ impl FactoryService {
             return Err(anyhow::anyhow!("Initial supply must be greater than 0"));
         }
 
-        if !farmer_wallet.starts_with("EQ") && !farmer_wallet.starts_with("UQ") {
-            return Err(anyhow::anyhow!("Invalid farmer wallet address format"));
-        }
+        // Address format validation is handled by store_ton_address()
+        // Accepts all formats: Raw (0:..., -1:...), EQ, UQ, kQ, 0Q
 
         // Build CreateJetton message body
         // Message structure (Tact):
@@ -107,16 +106,12 @@ impl FactoryService {
 
         info!("CreateJetton message body created");
 
-        // Build destination address cell (Factory contract)
-        let mut dest_builder = CellBuilder::new();
-        dest_builder.store_slice(FACTORY_ADDRESS.as_bytes())?;
-        let dest_cell = Arc::new(dest_builder.build()?);
-
         // Create transaction using admin wallet
         // Value: 1.0 TON minimum (0.3 for deploy + 0.2 for mint + buffer)
+        // Address encoding is now handled inside create_external_message
         let message = self.admin_wallet.create_external_message(
-            dest_cell,
-            1_000_000_000, // 1.0 TON
+            FACTORY_ADDRESS, // Address string (raw or user-friendly format)
+            1_000_000_000,   // 1.0 TON
             Arc::new(body),
         )?;
 

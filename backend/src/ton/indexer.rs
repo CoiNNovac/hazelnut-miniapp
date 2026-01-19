@@ -13,7 +13,7 @@ pub struct Indexer {
 
 impl Indexer {
     pub async fn new(db: Database) -> Result<Self> {
-        let client = Client::new("https://toncenter.com/api/v2", None);
+        let client = Client::new("https://testnet.toncenter.com/api/v2", None);
         Ok(Self {
             db,
             client,

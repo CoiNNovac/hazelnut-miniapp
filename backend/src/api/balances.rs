@@ -57,7 +57,7 @@ async fn get_user_balances(
         name: "MKOIN Stablecoin".to_string(),
         balance: format!("{:.9}", mkoin_balance_tokens),
         balance_nanocoins: mkoin_balance_nanocoins.to_string(),
-        token_address: Some("EQANIErWjj6U4FNgSfEHwR6x-bkkJCV1n5w1OIb-Pf6eWQwD".to_string()),
+        token_address: Some("0:00d2042b5a38fa538142608b0c87eaab75780684ca2313066dbc693c954253c9".to_string()),
     };
 
     // Get campaign token balances from database (purchases)
@@ -102,7 +102,7 @@ async fn get_mkoin_balance(
                 name: "MKOIN Stablecoin".to_string(),
                 balance: format!("{:.9}", balance_tokens),
                 balance_nanocoins: balance_nanocoins.to_string(),
-                token_address: Some("EQANIErWjj6U4FNgSfEHwR6x-bkkJCV1n5w1OIb-Pf6eWQwD".to_string()),
+                token_address: Some("0:00d2042b5a38fa538142608b0c87eaab75780684ca2313066dbc693c954253c9".to_string()),
             }))
         }
         Err(e) => {

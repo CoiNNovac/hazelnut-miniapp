@@ -7,3 +7,4 @@ pub mod contracts;
 pub mod cell_utils;
 pub mod mkoin_service;
 pub mod factory_service;
+pub mod address_utils;

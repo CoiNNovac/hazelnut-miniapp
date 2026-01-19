@@ -63,10 +63,10 @@ export const MKOINPage: React.FC = () => {
       return;
     }
 
-    if (!recipient.startsWith('EQ') && !recipient.startsWith('UQ')) {
-      alert('Invalid TON address format. Must start with EQ or UQ');
-      return;
-    }
+    // if (!recipient.startsWith('EQ') && !recipient.startsWith('UQ')) {
+    //   alert('Invalid TON address format. Must start with EQ or UQ');
+    //   return;
+    // }
 
     mintMutation.mutate({ recipient, amount });
   };
@@ -147,11 +147,10 @@ export const MKOINPage: React.FC = () => {
           {/* Mint Result */}
           {mintResult && (
             <div
-              className={`mt-4 p-4 rounded-md ${
-                mintResult.success
+              className={`mt-4 p-4 rounded-md ${mintResult.success
                   ? 'bg-green-50 border border-green-200'
                   : 'bg-red-50 border border-red-200'
-              }`}
+                }`}
             >
               <div className="flex items-start">
                 {mintResult.success ? (
@@ -211,11 +210,10 @@ export const MKOINPage: React.FC = () => {
                       </p>
                     </div>
                     <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        mint.status === 'confirmed'
+                      className={`text-xs px-2 py-1 rounded-full ${mint.status === 'confirmed'
                           ? 'bg-green-100 text-green-700'
                           : 'bg-yellow-100 text-yellow-700'
-                      }`}
+                        }`}
                     >
                       {mint.status}
                     </span>
@@ -273,13 +271,12 @@ export const MKOINPage: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          mint.status === 'confirmed'
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${mint.status === 'confirmed'
                             ? 'bg-green-100 text-green-700'
                             : mint.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}
                       >
                         {mint.status}
                       </span>

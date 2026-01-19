@@ -15,7 +15,7 @@ impl MintingService {
         let mnemonic = std::env::var("ADMIN_MNEMONIC")
             .unwrap_or_else(|_| "admin_seed_placeholder".to_string());
 
-        let client = Client::new("https://toncenter.com/api/v2", None);
+        let client = Client::new("https://testnet.toncenter.com/api/v2", None);
 
         let wallet = Wallet::from_seed(&mnemonic).unwrap_or_else(|_| {
             error!("Invalid seed, using random wallet");
@@ -32,8 +32,8 @@ impl MintingService {
         info!("Recording token mint for campaign: {}", campaign.name);
 
         // For now, we're not deploying new contracts - just recording in DB
-        // All tokens will use the MKOIN contract address
-        const MKOIN_CONTRACT: &str = "EQANIErWjj6U4FNgSfEHwR6x-bkkJCV1n5w1OIb-Pf6eWQwD";
+        // All tokens will use the MKOIN contract address (raw format)
+        const MKOIN_CONTRACT: &str = "0:00d2042b5a38fa538142608b0c87eaab75780684ca2313066dbc693c954253c9";
 
         // Parse token supply
         let supply_float = f64::from_str(&campaign.token_supply).unwrap_or(0.0);

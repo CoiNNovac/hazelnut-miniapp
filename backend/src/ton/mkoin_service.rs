@@ -1,12 +1,14 @@
 use crate::ton::client::Client;
 use crate::ton::wallet::Wallet;
+use crate::ton::address_utils::store_ton_address;
 use anyhow::Result;
+use num_bigint::BigUint;
 use std::sync::Arc;
 use tonlib_core::cell::{CellBuilder, BagOfCells};
 use tracing::{error, info};
 
-// MKOIN contract address on testnet
-const MKOIN_ADDRESS: &str = "EQANIErWjj6U4FNgSfEHwR6x-bkkJCV1n5w1OIb-Pf6eWQwD";
+// MKOIN contract address on testnet (raw format for reliability)
+const MKOIN_ADDRESS: &str = "0:00d2042b5a38fa538142608b0c87eaab75780684ca2313066dbc693c954253c9";
 
 // Tact message opcodes (calculated from message name CRC32)
 // For "Mint" message: opcode = crc32("Mint") & 0x7fffffff
@@ -62,9 +64,8 @@ impl MkoinService {
             return Err(anyhow::anyhow!("Amount must be greater than 0"));
         }
 
-        if !recipient.starts_with("EQ") && !recipient.starts_with("UQ") {
-            return Err(anyhow::anyhow!("Invalid TON address format"));
-        }
+        // Address format validation is handled by store_ton_address()
+        // Accepts all formats: Raw (0:..., -1:...), EQ, UQ, kQ, 0Q
 
         // Build Mint message body
         // Message structure (Tact):
@@ -76,32 +77,22 @@ impl MkoinService {
         // Store opcode
         body_builder.store_u32(32, MINT_OPCODE)?;
 
-        // Store amount as coins (VarUInteger 16)
-        // For now, we'll use a simplified coins encoding
-        // TODO: Implement proper VarUInteger 16 encoding
-        let amount_bytes = amount.to_be_bytes();
-        body_builder.store_slice(&amount_bytes)?;
+        // Store amount as coins (proper VarUInteger 16 encoding)
+        body_builder.store_coins(&BigUint::from(amount))?;
 
-        // Store receiver address
-        // TODO: Implement proper MsgAddress encoding
-        // For now, store the address string
-        body_builder.store_slice(recipient.as_bytes())?;
+        // Store receiver address (proper MsgAddress encoding)
+        store_ton_address(&mut body_builder, recipient)?;
 
         let body = body_builder.build()?;
 
         info!("Mint message body created");
 
-        // Build destination address cell
-        // TODO: Properly parse and encode the TON address
-        let mut dest_builder = CellBuilder::new();
-        dest_builder.store_slice(MKOIN_ADDRESS.as_bytes())?;
-        let dest_cell = Arc::new(dest_builder.build()?);
-
         // Create transaction using admin wallet
         // Value: 0.05 TON (50,000,000 nanoTON) minimum for gas
+        // Address encoding is now handled inside create_external_message
         let message = self.admin_wallet.create_external_message(
-            dest_cell,
-            50_000_000, // 0.05 TON
+            MKOIN_ADDRESS, // Address string (raw or user-friendly format)
+            50_000_000,     // 0.05 TON
             Arc::new(body),
         )?;
 
