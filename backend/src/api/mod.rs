@@ -1,6 +1,8 @@
 use crate::db::Database;
 use crate::cache::CacheService;
 use crate::ton::minting::MintingService;
+use crate::ton::mkoin_service::MkoinService;
+use crate::ton::factory_service::FactoryService;
 use anyhow::Result;
 use axum::{
     Json, Router,
@@ -13,6 +15,8 @@ use std::sync::Arc;
 use tower_http::cors::{CorsLayer, Any};
 
 mod admin;
+mod purchases;
+mod balances;
 
 // Core Data Structures
 #[derive(Debug, Serialize, Deserialize)]
@@ -56,14 +60,20 @@ pub struct AppState {
     pub db: Database,
     pub cache: CacheService,
     pub minting_service: MintingService,
+    pub mkoin_service: MkoinService,
+    pub factory_service: FactoryService,
 }
 
 pub fn router(db: Database, cache: CacheService) -> Router {
     let minting_service = MintingService::new();
+    let mkoin_service = MkoinService::new();
+    let factory_service = FactoryService::new();
     let state = Arc::new(AppState {
         db: db.clone(),
         cache,
         minting_service,
+        mkoin_service,
+        factory_service,
     });
 
     // Configure CORS to allow requests from admin frontend
@@ -74,6 +84,8 @@ pub fn router(db: Database, cache: CacheService) -> Router {
 
     Router::new()
         .merge(admin::admin_routes(db))
+        .merge(purchases::purchases_routes())
+        .merge(balances::balances_routes())
         .route("/portfolio/{user_address}", get(get_user_portfolio))
         // Public/Protected User Routes
         .route("/users/register", post(register_user))

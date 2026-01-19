@@ -23,6 +23,7 @@ export interface Campaign {
   suggested_price: string;
   status: 'pending' | 'running' | 'paused' | 'finished' | 'rejected' | 'cancelled' | 'approved';
   token_address?: string;
+  tx_hash?: string;
   created_at?: string;
 }
 
@@ -34,4 +35,34 @@ export interface LoginResponse {
     role: string;
     address: string;
   };
+}
+
+export interface MintMkoinRequest {
+  recipient: string;
+  amount: string;
+}
+
+export interface MintMkoinResponse {
+  success: boolean;
+  tx_hash?: string;
+  message: string;
+}
+
+export interface TokenBalance {
+  symbol: string;
+  name: string;
+  balance: string;
+  balance_nanocoins: string;
+  token_address?: string;
+}
+
+export interface MkoinMint {
+  id: string;
+  recipient_address: string;
+  amount: string;
+  tx_hash?: string;
+  minted_by: string;
+  status: string;
+  minted_at?: string;
+  confirmed_at?: string;
 }

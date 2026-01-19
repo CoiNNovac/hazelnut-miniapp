@@ -59,6 +59,9 @@ pub async fn request_campaign(
         status: "pending".to_string(),
         token_address: None,
         created_at: None,
+        minted_at: None,
+        mint_amount: None,
+        mint_tx_hash: None,
     };
 
     let id = state
@@ -186,21 +189,46 @@ pub async fn update_campaign_status(
                 "Campaign not found after update".to_string(),
             ))?;
 
-        // Call minting service
-        let token_address = state
-            .minting_service
-            .mint_campaign_token(&campaign)
+        // Get farmer user info to get their TON address
+        let farmer = state
+            .db
+            .get_user_by_id(campaign.farmer_id)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+            .ok_or((StatusCode::NOT_FOUND, "Farmer not found".to_string()))?;
+
+        // Parse token supply
+        let supply: u128 = campaign.token_supply
+            .parse()
+            .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid token supply".to_string()))?;
+
+        // Convert to nanocoins (multiply by 10^9)
+        let supply_nanocoins = supply * 1_000_000_000;
+
+        // Call Factory service to create campaign token
+        let result = state
+            .factory_service
+            .create_campaign_token(
+                &farmer.address,
+                &campaign.token_name,
+                &campaign.token_symbol,
+                supply_nanocoins,
+            )
             .await
             .map_err(|e| {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Minting failed: {}", e),
+                    format!("Token creation failed: {}", e),
                 )
             })?;
 
-        println!("Campaign approved! Minted token at {}", token_address);
+        println!("Campaign approved! CreateJetton TX: {}", result.tx_hash);
+        println!("Jetton address: {}", result.jetton_address);
 
-        // Save token address to database
+        let token_address = result.jetton_address;
+        let tx_hash = result.tx_hash;
+
+        // Save token address and transaction info to database
         state
             .db
             .update_campaign_token_address(id, &token_address)
@@ -212,9 +240,25 @@ pub async fn update_campaign_status(
                 )
             })?;
 
+        // Record the mint transaction
+        state
+            .db
+            .update_campaign_mint_info(id, &supply.to_string(), Some(&tx_hash))
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to record mint info: {}", e),
+                )
+            })?;
+
         response_data.insert(
             "token_address".to_string(),
             serde_json::json!(token_address),
+        );
+        response_data.insert(
+            "tx_hash".to_string(),
+            serde_json::json!(tx_hash),
         );
     }
 

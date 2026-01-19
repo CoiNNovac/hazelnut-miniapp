@@ -10,6 +10,7 @@ use std::sync::Arc;
 pub mod auth;
 pub mod users;
 pub mod campaigns;
+pub mod mkoin;
 
 pub fn admin_routes(_db: crate::db::Database) -> Router<Arc<AppState>> {
      Router::new()
@@ -21,6 +22,7 @@ pub fn admin_routes(_db: crate::db::Database) -> Router<Arc<AppState>> {
         .route("/campaigns", get(campaigns::list_campaigns).post(campaigns::request_campaign))
         .route("/campaigns/{id}", get(campaigns::get_campaign))
         .route("/campaigns/{id}/status", put(campaigns::update_campaign_status))
+        .merge(mkoin::mkoin_routes())
 }
 
 // --- Shared Helpers ---

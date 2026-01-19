@@ -35,6 +35,43 @@ pub struct Campaign {
     pub status: String, // 'pending', 'running', 'paused', 'finished', 'rejected', 'cancelled', 'approved'
     pub token_address: Option<String>, // TON blockchain address of minted token
     pub created_at: Option<DateTime<Utc>>,
+    pub minted_at: Option<DateTime<Utc>>,
+    pub mint_amount: Option<BigDecimal>,
+    #[serde(rename = "tx_hash")]
+    pub mint_tx_hash: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Purchase {
+    pub id: Uuid,
+    pub user_address: String,
+    pub campaign_id: Uuid,
+    pub mkoin_paid: BigDecimal,
+    pub tokens_received: BigDecimal,
+    pub tx_hash: Option<String>,
+    pub status: String,
+    pub purchased_at: DateTime<Utc>,
+    pub confirmed_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CampaignStats {
+    pub total_purchases: i32,
+    pub total_mkoin_raised: String,
+    pub total_tokens_sold: String,
+    pub unique_buyers: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct MkoinMint {
+    pub id: Uuid,
+    pub recipient_address: String,
+    pub amount: BigDecimal,
+    pub tx_hash: Option<String>,
+    pub minted_by: Option<Uuid>,
+    pub status: String,
+    pub minted_at: DateTime<Utc>,
+    pub confirmed_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Clone)]
@@ -287,17 +324,18 @@ impl Database {
     pub async fn list_campaigns(&self, status_filter: Option<String>, farmer_id_filter: Option<Uuid>) -> Result<Vec<Campaign>> {
         // Construct query dynamically or use a simpler approach since we have limited filters
         // Using a basic builder approach or just different queries if complexity grows.
-        // For 2 optional filters, we can use 1 query with COALESCE or similar logic, 
+        // For 2 optional filters, we can use 1 query with COALESCE or similar logic,
         // or just building the query string. SQLx allows `QueryBuilder`.
         // Or simplified: `WHERE (status = $1 OR $1 IS NULL) AND (farmer_id = $2 OR $2 IS NULL)`
-        
+
         let campaigns = sqlx::query_as!(
             Campaign,
             r#"
             SELECT
                 id, farmer_id, name, description, token_name, token_symbol,
                 token_supply, logo_url, image_url, start_time, end_time,
-                suggested_price, status::text as "status!", token_address, created_at
+                suggested_price, status::text as "status!", token_address, created_at,
+                minted_at, mint_amount, mint_tx_hash
             FROM campaigns
             WHERE (status::text = $1 OR $1 IS NULL)
               AND (farmer_id = $2 OR $2 IS NULL)
@@ -319,7 +357,8 @@ impl Database {
             SELECT
                 id, farmer_id, name, description, token_name, token_symbol,
                 token_supply, logo_url, image_url, start_time, end_time,
-                suggested_price, status::text as "status!", token_address, created_at
+                suggested_price, status::text as "status!", token_address, created_at,
+                minted_at, mint_amount, mint_tx_hash
             FROM campaigns
             WHERE id = $1
             "#,
@@ -350,5 +389,235 @@ impl Database {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    // --- Campaign Mint Tracking ---
+
+    pub async fn record_campaign_mint(
+        &self,
+        campaign_id: Uuid,
+        recipient: &str,
+        amount: &str,
+        tx_hash: Option<&str>,
+    ) -> Result<Uuid> {
+        use std::str::FromStr;
+        let amount_bd = BigDecimal::from_str(amount)?;
+        let rec = sqlx::query!(
+            r#"
+            INSERT INTO campaign_token_mints (campaign_id, recipient_address, amount, tx_hash)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+            "#,
+            campaign_id,
+            recipient,
+            amount_bd,
+            tx_hash
+        )
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(rec.id)
+    }
+
+    pub async fn update_campaign_mint_info(
+        &self,
+        campaign_id: Uuid,
+        amount: &str,
+        tx_hash: Option<&str>,
+    ) -> Result<()> {
+        use std::str::FromStr;
+        let amount_bd = BigDecimal::from_str(amount)?;
+        sqlx::query!(
+            r#"
+            UPDATE campaigns
+            SET minted_at = NOW(),
+                mint_amount = $2,
+                mint_tx_hash = $3
+            WHERE id = $1
+            "#,
+            campaign_id,
+            amount_bd,
+            tx_hash
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    // --- Purchase Tracking ---
+
+    pub async fn create_purchase(
+        &self,
+        user_address: &str,
+        campaign_id: Uuid,
+        mkoin_paid: &str,
+        tokens_received: &str,
+        tx_hash: &str,
+    ) -> Result<Uuid> {
+        use std::str::FromStr;
+        let mkoin_paid_bd = BigDecimal::from_str(mkoin_paid)?;
+        let tokens_received_bd = BigDecimal::from_str(tokens_received)?;
+        let rec = sqlx::query!(
+            r#"
+            INSERT INTO purchases (user_address, campaign_id, mkoin_paid, tokens_received, tx_hash)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id
+            "#,
+            user_address,
+            campaign_id,
+            mkoin_paid_bd,
+            tokens_received_bd,
+            tx_hash
+        )
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(rec.id)
+    }
+
+    pub async fn get_user_purchases(&self, user_address: &str) -> Result<Vec<Purchase>> {
+        let purchases = sqlx::query_as::<_, Purchase>(
+            r#"
+            SELECT
+                id,
+                user_address,
+                campaign_id,
+                mkoin_paid,
+                tokens_received,
+                tx_hash,
+                status,
+                purchased_at,
+                confirmed_at
+            FROM purchases
+            WHERE user_address = $1
+            ORDER BY purchased_at DESC
+            "#
+        )
+        .bind(user_address)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(purchases)
+    }
+
+    pub async fn get_campaign_purchases(&self, campaign_id: Uuid) -> Result<Vec<Purchase>> {
+        let purchases = sqlx::query_as::<_, Purchase>(
+            r#"
+            SELECT
+                id,
+                user_address,
+                campaign_id,
+                mkoin_paid,
+                tokens_received,
+                tx_hash,
+                status,
+                purchased_at,
+                confirmed_at
+            FROM purchases
+            WHERE campaign_id = $1
+            ORDER BY purchased_at DESC
+            "#
+        )
+        .bind(campaign_id)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(purchases)
+    }
+
+    pub async fn get_campaign_stats(&self, campaign_id: Uuid) -> Result<CampaignStats> {
+        let stats = sqlx::query!(
+            r#"
+            SELECT
+                COUNT(*)::int as "total_purchases!",
+                COALESCE(SUM(mkoin_paid), 0) as "total_mkoin_raised!",
+                COALESCE(SUM(tokens_received), 0) as "total_tokens_sold!",
+                COUNT(DISTINCT user_address)::int as "unique_buyers!"
+            FROM purchases
+            WHERE campaign_id = $1 AND status = 'confirmed'
+            "#,
+            campaign_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(CampaignStats {
+            total_purchases: stats.total_purchases,
+            total_mkoin_raised: stats.total_mkoin_raised.to_string(),
+            total_tokens_sold: stats.total_tokens_sold.to_string(),
+            unique_buyers: stats.unique_buyers,
+        })
+    }
+
+    pub async fn get_user_portfolio(&self, user_address: &str) -> Result<Vec<crate::api::PortfolioItem>> {
+        let items = sqlx::query!(
+            r#"
+            SELECT
+                p.token_address as "token_address!",
+                COALESCE(tm.symbol, 'UNKNOWN') as "symbol!",
+                p.balance as "balance!"
+            FROM portfolios p
+            LEFT JOIN token_minters tm ON p.token_address = tm.address
+            WHERE p.user_address = $1 AND p.balance > 0
+            ORDER BY p.updated_at DESC
+            "#,
+            user_address
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(items
+            .into_iter()
+            .map(|r| crate::api::PortfolioItem {
+                token_address: r.token_address,
+                symbol: r.symbol,
+                balance: r.balance.to_string(),
+                usd_value: None,
+            })
+            .collect())
+    }
+
+    // MKOIN Mint Operations
+
+    /// Record a MKOIN mint transaction
+    pub async fn record_mkoin_mint(
+        &self,
+        recipient_address: &str,
+        amount: &BigDecimal,
+        tx_hash: &str,
+        minted_by: Option<Uuid>,
+        status: &str,
+    ) -> Result<Uuid> {
+        let record = sqlx::query!(
+            r#"
+            INSERT INTO mkoin_mints (recipient_address, amount, tx_hash, minted_by, status)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id
+            "#,
+            recipient_address,
+            amount,
+            tx_hash,
+            minted_by,
+            status
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(record.id)
+    }
+
+    /// Get MKOIN mint history
+    pub async fn get_mkoin_mints(&self, limit: Option<i64>) -> Result<Vec<MkoinMint>> {
+        let limit_val = limit.unwrap_or(100);
+
+        let mints = sqlx::query_as::<_, MkoinMint>(
+            r#"
+            SELECT id, recipient_address, amount, tx_hash, minted_by, status, minted_at, confirmed_at
+            FROM mkoin_mints
+            ORDER BY minted_at DESC
+            LIMIT $1
+            "#
+        )
+        .bind(limit_val)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(mints)
     }
 }

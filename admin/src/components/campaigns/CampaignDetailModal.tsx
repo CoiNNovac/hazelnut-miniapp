@@ -56,6 +56,21 @@ export const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({ campai
                 </div>
             )}
 
+            {campaign.tx_hash && (
+                <div className="col-span-2">
+                    <h3 className="text-sm font-medium text-gray-500">Creation Transaction</h3>
+                    <p className="mt-1 text-sm font-mono text-gray-900 break-all">{campaign.tx_hash}</p>
+                    <a
+                        href={`https://testnet.tonscan.org/tx/${campaign.tx_hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:underline mt-1 inline-block"
+                    >
+                        View on TON Scanner →
+                    </a>
+                </div>
+            )}
+
             <div className="col-span-2 mt-4">
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Token Buyers (Placeholder)</h3>
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center text-gray-500 text-sm">

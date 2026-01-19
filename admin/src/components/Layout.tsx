@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Sprout, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Sprout, Coins, LogOut } from 'lucide-react';
 import clsx from 'clsx';
 
 export const Layout: React.FC = () => {
@@ -15,6 +15,7 @@ export const Layout: React.FC = () => {
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
     { label: 'Users', path: '/users', icon: Users, adminOnly: true },
     { label: 'Campaigns', path: '/campaigns', icon: Sprout },
+    { label: 'MKOIN', path: '/mkoin', icon: Coins, adminOnly: true },
   ];
 
   const filteredNavItems = navItems.filter(item => {

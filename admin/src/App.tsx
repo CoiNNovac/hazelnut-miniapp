@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 import { UsersPage } from './pages/UsersPage';
 import { CampaignsPage } from './pages/CampaignsPage';
+import { MKOINPage } from './pages/MKOINPage';
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ function App() {
               <Route index element={<div className="text-center mt-20 text-2xl text-gray-500">Welcome to Admin Dashboard</div>} />
               <Route path="users" element={<UsersPage />} />
               <Route path="campaigns" element={<CampaignsPage />} />
+              <Route path="mkoin" element={<MKOINPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />
