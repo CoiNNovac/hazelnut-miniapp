@@ -52,7 +52,7 @@ pub struct MintHistoryItem {
 pub fn mkoin_routes() -> Router<Arc<AppState>> {
     Router::new()
         .route("/admin/mkoin/mint", post(mint_mkoin))
-        .route("/admin/mkoin/balance/:address", get(get_balance))
+        .route("/admin/mkoin/balance/{address}", get(get_balance))
         .route("/admin/mkoin/total-supply", get(get_total_supply))
         .route("/admin/mkoin/history", get(get_mint_history))
 }

@@ -28,8 +28,8 @@ pub struct PortfolioResponse {
 
 pub fn balances_routes() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/balances/:address", get(get_user_balances))
-        .route("/balances/:address/mkoin", get(get_mkoin_balance))
+        .route("/balances/{address}", get(get_user_balances))
+        .route("/balances/{address}/mkoin", get(get_mkoin_balance))
 }
 
 /// Get all balances for a user (MKOIN + campaign tokens)

@@ -187,11 +187,11 @@ pub fn purchases_routes() -> Router<Arc<AppState>> {
         .route("/purchases", post(create_purchase))
         .route("/purchases/my", get(get_user_purchases))
         .route(
-            "/campaigns/:campaign_id/purchases",
+            "/campaigns/{campaign_id}/purchases",
             get(get_campaign_purchases_handler),
         )
         .route(
-            "/campaigns/:campaign_id/stats",
+            "/campaigns/{campaign_id}/stats",
             get(get_campaign_stats_handler),
         )
 }
