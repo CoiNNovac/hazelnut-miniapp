@@ -59,7 +59,12 @@ impl Client {
         .await
     }
 
-    pub async fn run_get_method(&self, address: &str, method: &str, stack: Vec<serde_json::Value>) -> Result<serde_json::Value> {
+    pub async fn run_get_method(
+        &self,
+        address: &str,
+        method: &str,
+        stack: Vec<serde_json::Value>,
+    ) -> Result<serde_json::Value> {
         self.post(
             "runGetMethod",
             json!({
@@ -71,18 +76,31 @@ impl Client {
         .await
     }
 
+    pub async fn get_transactions(&self, address: &str, limit: u32) -> Result<serde_json::Value> {
+        self.post(
+            "getTransactions",
+            json!({
+                "address": address,
+                "limit": limit,
+                "to_lt": 0,
+                "archival": true
+            }),
+        )
+        .await
+    }
+
     // Helper to get wallet seqno
     pub async fn get_wallet_seqno(&self, address: &str) -> Result<u64> {
         let result = self.run_get_method(address, "seqno", vec![]).await?;
-        
+
         // Parse result stack
         // Result format: {"stack": [["num", "0x123"]], "exit_code": 0}
         if let Some(exit_code) = result.get("exit_code") {
-             if exit_code.as_i64().unwrap_or(-1) != 0 {
-                 // If account is uninitialized, seqno is usually 0 or method fails
-                 // We'll assume 0 for uninit
-                 return Ok(0);
-             }
+            if exit_code.as_i64().unwrap_or(-1) != 0 {
+                // If account is uninitialized, seqno is usually 0 or method fails
+                // We'll assume 0 for uninit
+                return Ok(0);
+            }
         }
 
         if let Some(stack) = result["stack"].as_array() {
@@ -101,31 +119,109 @@ impl Client {
     }
 
     async fn post(&self, method: &str, params: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("{}/{}", self.base_url, method);
-        let mut builder = self.http.post(&url).json(&params);
-
-        if let Some(key) = &self.api_key {
-            builder = builder.header("X-API-Key", key);
-        }
-
-        let resp = builder.send().await?;
-        let text = resp.text().await?;
-        let body: serde_json::Value = match serde_json::from_str(&text) {
-            Ok(json) => json,
-            Err(e) => {
-                anyhow::bail!(
-                    "Failed to parse JSON from {}: {} - Raw body: {}",
-                    url,
-                    e,
-                    text
-                )
-            }
+        let is_json_rpc = self.base_url.ends_with("/jsonRPC");
+        let url = if is_json_rpc {
+            self.base_url.clone()
+        } else {
+            format!("{}/{}", self.base_url, method)
         };
 
-        if let Some(error) = body.get("error") {
-            return Err(anyhow::anyhow!("RPC Error: {:?}", error));
-        }
+        let mut retries = 20;
 
-        Ok(body["result"].clone())
+        loop {
+            let mut builder = self
+                .http
+                .post(&url)
+                .header("Content-Type", "application/json");
+
+            if is_json_rpc {
+                // JSON-RPC 2.0 Envelope
+                let rpc_body = serde_json::json!({
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": method,
+                    "params": params
+                });
+                builder = builder.json(&rpc_body);
+            } else {
+                // Standard REST-like V2
+                builder = builder.json(&params);
+            }
+
+            if let Some(key) = &self.api_key {
+                builder = builder.header("X-API-Key", key);
+            } else {
+                tracing::warn!("No API Key set!");
+            }
+
+            let resp_result = builder.send().await;
+
+            // Handle HTTP connection errors
+            let resp = match resp_result {
+                Ok(r) => r,
+                Err(e) => {
+                    if retries > 0 {
+                        tracing::warn!("HTTP request failed: {}, retrying... ({})", e, retries);
+                        retries -= 1;
+                        tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
+                        continue;
+                    }
+                    return Err(e.into());
+                }
+            };
+
+            let text = resp.text().await?;
+            let body: serde_json::Value = match serde_json::from_str(&text) {
+                Ok(json) => json,
+                Err(e) => {
+                    anyhow::bail!(
+                        "Failed to parse JSON from {}: {} - Raw body: {}",
+                        url,
+                        e,
+                        text
+                    )
+                }
+            };
+
+            if !body["ok"].as_bool().unwrap_or(false) {
+                // Check for LITE_SERVER_NOTREADY or similar transient errors
+                let should_retry = if let Some(error) = body.get("error") {
+                    let err_str = error.as_str().unwrap_or("");
+                    err_str.contains("LITE_SERVER_NOTREADY")
+                        || err_str.contains("LITE_SERVER_UNKNOWN")
+                } else if let Some(msg) = body.get("message") {
+                    let msg_str = msg.as_str().unwrap_or("");
+                    msg_str.contains("LITE_SERVER_NOTREADY")
+                } else {
+                    false
+                };
+
+                if should_retry && retries > 0 {
+                    tracing::warn!("RPC Node Not Ready/Unknown, retrying... ({})", retries);
+                    retries -= 1;
+                    tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
+                    continue;
+                }
+
+                // Handle toncenter error wrapper
+                if let Some(error) = body.get("error") {
+                    return Err(anyhow::anyhow!(
+                        "RPC Error: {}".to_string() + error.as_str().unwrap_or("Unknown")
+                    ));
+                }
+                // Fallback for code/message format
+                if let Some(msg) = body.get("message") {
+                    return Err(anyhow::anyhow!(
+                        "RPC Error (Code {}): {}",
+                        body["code"],
+                        msg
+                    ));
+                }
+                // Fallback if result is missing but ok is false
+                return Err(anyhow::anyhow!("RPC Failed: {:?}", body));
+            }
+
+            return Ok(body["result"].clone());
+        }
     }
 }

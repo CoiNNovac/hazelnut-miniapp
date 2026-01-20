@@ -13,7 +13,8 @@ pub struct Indexer {
 
 impl Indexer {
     pub async fn new(db: Database) -> Result<Self> {
-        let client = Client::new("https://testnet.toncenter.com/api/v2", None);
+        let api_key = std::env::var("TON_API_KEY").ok();
+        let client = Client::new("https://testnet.toncenter.com/api/v2", api_key);
         Ok(Self {
             db,
             client,

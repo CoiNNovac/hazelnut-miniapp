@@ -1,9 +1,11 @@
+use crate::ton::address_utils::store_ton_address;
 use crate::ton::client::Client;
 use crate::ton::wallet::Wallet;
 use anyhow::Result;
+use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tonlib_core::cell::{CellBuilder, BagOfCells};
+use tonlib_core::cell::{BagOfCells, CellBuilder};
 use tracing::{error, info};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -27,13 +29,12 @@ pub struct FactoryService {
 
 impl FactoryService {
     pub fn new() -> Self {
-        let mnemonic = std::env::var("ADMIN_MNEMONIC")
-            .unwrap_or_else(|_| {
-                error!("ADMIN_MNEMONIC not set in environment");
-                "".to_string()
-            });
+        let mnemonic = std::env::var("ADMIN_MNEMONIC").unwrap_or_else(|_| {
+            error!("ADMIN_MNEMONIC not set in environment");
+            "".to_string()
+        });
 
-        let admin_wallet = if !mnemonic.is_empty() {
+        let mut admin_wallet = if !mnemonic.is_empty() {
             Wallet::from_seed(&mnemonic).unwrap_or_else(|e| {
                 error!("Failed to load admin wallet from mnemonic: {}", e);
                 Wallet::new_random()
@@ -42,8 +43,18 @@ impl FactoryService {
             Wallet::new_random()
         };
 
+        // Override address if ADMIN_ADDRESS is set (workaround for incorrect derivation)
+        if let Ok(addr) = std::env::var("ADMIN_ADDRESS") {
+            if !addr.is_empty() {
+                info!("Using ADMIN_ADDRESS from env: {}", addr);
+                admin_wallet.address = addr;
+            }
+        }
+
+        let api_key = std::env::var("TON_API_KEY").ok();
+
         Self {
-            client: Client::new("https://testnet.toncenter.com/api/v2", None),
+            client: Client::new("https://testnet.toncenter.com/api/v2", api_key),
             admin_wallet,
         }
     }
@@ -75,9 +86,6 @@ impl FactoryService {
             return Err(anyhow::anyhow!("Initial supply must be greater than 0"));
         }
 
-        // Address format validation is handled by store_ton_address()
-        // Accepts all formats: Raw (0:..., -1:...), EQ, UQ, kQ, 0Q
-
         // Build CreateJetton message body
         // Message structure (Tact):
         // [32 bits] opcode
@@ -90,17 +98,15 @@ impl FactoryService {
         body_builder.store_u32(32, CREATE_JETTON_OPCODE)?;
 
         // Store farmer_wallet address
-        // TODO: Properly encode TON address as MsgAddress
-        body_builder.store_slice(farmer_wallet.as_bytes())?;
+        store_ton_address(&mut body_builder, farmer_wallet)
+            .map_err(|e| anyhow::anyhow!("Invalid farmer address: {}", e))?;
 
         // Build content cell (Jetton metadata)
         let content_cell = self.build_jetton_metadata(name, symbol)?;
         body_builder.store_reference(&content_cell)?;
 
         // Store initial_supply as coins (VarUInteger 16)
-        // TODO: Implement proper VarUInteger 16 encoding
-        let supply_bytes = initial_supply.to_be_bytes();
-        body_builder.store_slice(&supply_bytes)?;
+        body_builder.store_coins(&BigUint::from(initial_supply))?;
 
         let body = body_builder.build()?;
 
@@ -156,7 +162,11 @@ impl FactoryService {
     /// Build Jetton metadata cell
     ///
     /// Creates a cell containing token metadata (name, symbol, etc.)
-    fn build_jetton_metadata(&self, name: &str, symbol: &str) -> Result<Arc<tonlib_core::cell::Cell>> {
+    fn build_jetton_metadata(
+        &self,
+        name: &str,
+        symbol: &str,
+    ) -> Result<Arc<tonlib_core::cell::Cell>> {
         // TODO: Implement proper TEP-64 metadata format
         // For now, create a simple cell with name and symbol
         let mut metadata_builder = CellBuilder::new();
@@ -183,11 +193,7 @@ impl FactoryService {
         // Call get_farmer_wallet(jetton_address) on Factory
         let result = self
             .client
-            .run_get_method(
-                FACTORY_ADDRESS,
-                "get_farmer_wallet",
-                vec![addr_json],
-            )
+            .run_get_method(FACTORY_ADDRESS, "get_farmer_wallet", vec![addr_json])
             .await?;
 
         // Parse returned address from stack

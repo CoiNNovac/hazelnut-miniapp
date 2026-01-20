@@ -25,8 +25,8 @@ impl CellBuilderExt for CellBuilder {
             // But we can't easily access `self` (builder) here without RefCell or return data.
             // Parser allows reading bits/refs.
             // We want to return the bit content and refs.
-            let bits = parser.remaining_bits();
-            let refs = parser.remaining_refs();
+            let _bits = parser.remaining_bits();
+            let _refs = parser.remaining_refs();
 
             // We can only return a value.
             // Let's assume we can clone the data?
