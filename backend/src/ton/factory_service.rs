@@ -54,7 +54,7 @@ impl FactoryService {
         let api_key = std::env::var("TON_API_KEY").ok();
 
         Self {
-            client: Client::new("https://testnet.toncenter.com/api/v2", api_key),
+            client: Client::new("https://testnet.toncenter.com/api/v2/jsonRPC", api_key),
             admin_wallet,
         }
     }
@@ -162,18 +162,26 @@ impl FactoryService {
     /// Build Jetton metadata cell
     ///
     /// Creates a cell containing token metadata (name, symbol, etc.)
+    /// Build Jetton metadata cell
+    ///
+    /// Creates a cell containing token metadata (name, symbol, etc.)
     fn build_jetton_metadata(
         &self,
         name: &str,
         symbol: &str,
     ) -> Result<Arc<tonlib_core::cell::Cell>> {
-        // TODO: Implement proper TEP-64 metadata format
-        // For now, create a simple cell with name and symbol
+        // Implement TEP-64 off-chain metadata format (0x01 prefix + URI)
         let mut metadata_builder = CellBuilder::new();
 
-        // Store metadata as simple strings for now
-        metadata_builder.store_slice(name.as_bytes())?;
-        metadata_builder.store_slice(symbol.as_bytes())?;
+        // 0x01 indicates off-chain metadata
+        metadata_builder.store_u8(8, 0x01)?;
+
+        // Store URI as string
+        // For now using a placeholder that depends on name/symbol conceptually,
+        // but in reality we should upload a JSON to IPFS/S3 and point there.
+        // Aligning with the TS script which hardcodes a placeholder.
+        let uri = format!("https://hazelnut.ag/api/metadata/{}/{}", symbol, name);
+        metadata_builder.store_slice(uri.as_bytes())?;
 
         Ok(Arc::new(metadata_builder.build()?))
     }

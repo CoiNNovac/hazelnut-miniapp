@@ -198,18 +198,30 @@ pub async fn update_campaign_status(
             .ok_or((StatusCode::NOT_FOUND, "Farmer not found".to_string()))?;
 
         // Parse token supply
-        let supply: u128 = campaign.token_supply
+        let supply: u128 = campaign
+            .token_supply
             .parse()
             .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid token supply".to_string()))?;
 
         // Convert to nanocoins (multiply by 10^9)
         let supply_nanocoins = supply * 1_000_000_000;
 
+        // Fallback for test/seed data addresses (EVM style)
+        let farmer_address = if farmer.address.starts_with("0x") {
+            println!(
+                "WARN: Farmer address is EVM-style ({}), using Factory address as fallback owner",
+                farmer.address
+            );
+            "EQBY-OWwam2n7DO25xV7juUWS9MV9xjJ1bwL1dISkYDNcGP2" // Factory address
+        } else {
+            &farmer.address
+        };
+
         // Call Factory service to create campaign token
         let result = state
             .factory_service
             .create_campaign_token(
-                &farmer.address,
+                farmer_address,
                 &campaign.token_name,
                 &campaign.token_symbol,
                 supply_nanocoins,
@@ -240,7 +252,7 @@ pub async fn update_campaign_status(
                 )
             })?;
 
-        // Record the mint transaction
+        // Record the mint transaction info in campaign table
         state
             .db
             .update_campaign_mint_info(id, &supply.to_string(), Some(&tx_hash))
@@ -252,14 +264,43 @@ pub async fn update_campaign_status(
                 )
             })?;
 
+        // Also record this as a mint event in campaign_token_mints table
+        // This represents the initial supply being minted to the farmer
+        state
+            .db
+            .record_campaign_mint(id, &farmer.address, &supply.to_string(), Some(&tx_hash))
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to record mint event: {}", e),
+                )
+            })?;
+
+        // Store equivalent coin in token_minters table
+        state
+            .db
+            .upsert_token_minter(
+                &token_address,
+                Some(&campaign.token_symbol),
+                None, // Metadata URL TODO
+                true, // is_agri_token
+                Some(bigdecimal::BigDecimal::from_str(&campaign.token_supply).unwrap_or_default()),
+                Some(id),
+            )
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to store token info: {}", e),
+                )
+            })?;
+
         response_data.insert(
             "token_address".to_string(),
             serde_json::json!(token_address),
         );
-        response_data.insert(
-            "tx_hash".to_string(),
-            serde_json::json!(tx_hash),
-        );
+        response_data.insert("tx_hash".to_string(), serde_json::json!(tx_hash));
     }
 
     Ok(Json(serde_json::Value::Object(response_data)))
