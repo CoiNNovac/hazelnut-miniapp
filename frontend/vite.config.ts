@@ -7,7 +7,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    port: 3000,
+    port: 6092,
     // Allow requests from Cloudflare tunnel and ngrok
     allowedHosts: [
       'vcr-despite-forest-hampshire.trycloudflare.com',

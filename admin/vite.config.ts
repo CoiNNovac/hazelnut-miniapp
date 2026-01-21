@@ -15,6 +15,6 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3001, // Different from main frontend
+    port: 6091, // Different from main frontend
   }
 })
