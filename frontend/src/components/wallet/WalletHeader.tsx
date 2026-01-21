@@ -28,11 +28,10 @@ export function WalletHeader({ walletAddress, totalBalance, onNavigateToAbout }:
   };
 
   return (
-    <div className={`sticky top-0 z-40 backdrop-blur-md border-b ${
-      theme === 'Light'
+    <div className={`sticky top-0 z-40 backdrop-blur-md border-b ${theme === 'Light'
         ? 'bg-white/80 border-gray-200'
         : 'bg-[#1A1B41]/80 border-white/10'
-    }`}>
+      }`}>
       <div className="flex items-center justify-between p-4">
         <h1 className={`text-xl font-semibold ${theme === 'Light' ? 'text-gray-900' : 'text-white'}`}>
           {t('wallet.title')}
@@ -53,11 +52,10 @@ export function WalletHeader({ walletAddress, totalBalance, onNavigateToAbout }:
 
         {/* Wallet Address */}
         <motion.div
-          className={`flex items-center gap-2 rounded-2xl p-3 ${
-            theme === 'Light'
+          className={`flex items-center gap-2 rounded-2xl p-3 ${theme === 'Light'
               ? 'bg-gray-50'
               : 'bg-white/5'
-          }`}
+            }`}
         >
           {copied ? (
             <div className="flex items-center gap-2 flex-1 justify-center">
@@ -83,7 +81,7 @@ export function WalletHeader({ walletAddress, totalBalance, onNavigateToAbout }:
             </div>
           ) : (
             <code className={`flex-1 text-center text-sm ${theme === 'Light' ? 'text-gray-900' : 'text-white'}`}>
-              {formatAddress(walletAddress)}
+              {formatAddress(walletAddress || '')}
             </code>
           )}
           <button className="flex-shrink-0 p-1 rounded-lg" onClick={handleCopy}>

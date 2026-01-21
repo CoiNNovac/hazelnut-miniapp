@@ -142,7 +142,7 @@ export function WalletPage({ onNavigateToAbout, resetRef }: WalletPageProps = {}
   // View state
   const [activeView, setActiveView] = useState<'tokens' | 'transactions'>('tokens');
   const [showAllTransactions, setShowAllTransactions] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [_selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [selectedTokenDetail, setSelectedTokenDetail] = useState<WalletToken | null>(null);
   const [showBankActivity, setShowBankActivity] = useState(false);
 
@@ -243,31 +243,28 @@ export function WalletPage({ onNavigateToAbout, resetRef }: WalletPageProps = {}
           {/* Toggle View */}
           <div className="px-4 pt-4">
             <div
-              className={`flex rounded-2xl p-1 ${
-                theme === 'Light' ? 'bg-gray-100' : 'bg-white/5'
-              }`}
+              className={`flex rounded-2xl p-1 ${theme === 'Light' ? 'bg-gray-100' : 'bg-white/5'
+                }`}
             >
               <button
                 onClick={() => setActiveView('tokens')}
-                className={`flex-1 py-2 rounded-xl transition-all ${
-                  activeView === 'tokens'
+                className={`flex-1 py-2 rounded-xl transition-all ${activeView === 'tokens'
                     ? 'bg-white text-[#F47621] shadow'
                     : theme === 'Light'
-                    ? 'text-gray-600'
-                    : 'text-white/60'
-                }`}
+                      ? 'text-gray-600'
+                      : 'text-white/60'
+                  }`}
               >
                 {t('wallet.tokens')}
               </button>
               <button
                 onClick={() => setActiveView('transactions')}
-                className={`flex-1 py-2 rounded-xl transition-all ${
-                  activeView === 'transactions'
+                className={`flex-1 py-2 rounded-xl transition-all ${activeView === 'transactions'
                     ? 'bg-white text-[#F47621] shadow'
                     : theme === 'Light'
-                    ? 'text-gray-600'
-                    : 'text-white/60'
-                }`}
+                      ? 'text-gray-600'
+                      : 'text-white/60'
+                  }`}
               >
                 {t('wallet.transactions')}
               </button>

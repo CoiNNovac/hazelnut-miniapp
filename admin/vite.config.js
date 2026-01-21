@@ -13,6 +13,11 @@ export default defineConfig({
         },
     },
     server: {
-        port: 3001, // Different from main frontend
+        port: 6091, // Different from main frontend
+        host: true,
+        allowedHosts: [
+            'hazelnut-admin.starkpump.meme',
+            '.starkpump.meme'
+        ],
     }
 });
