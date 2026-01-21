@@ -16,5 +16,10 @@ export default defineConfig({
   },
   server: {
     port: 6091, // Different from main frontend
+    host: true,
+    allowedHosts: [
+      'hazelnut-admin.starkpump.meme',
+      '.starkpump.meme'
+    ],
   }
 })

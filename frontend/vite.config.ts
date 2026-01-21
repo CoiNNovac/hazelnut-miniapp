@@ -8,12 +8,14 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 6092,
+    host: true,
     // Allow requests from Cloudflare tunnel and ngrok
     allowedHosts: [
       'vcr-despite-forest-hampshire.trycloudflare.com',
       '.trycloudflare.com',
       '.ngrok.app',
       '.ngrok.io',
+      '.starkpump.meme',
     ],
   },
   resolve: {
