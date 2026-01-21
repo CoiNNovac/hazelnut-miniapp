@@ -18,6 +18,18 @@ export default defineConfig({
       '.starkpump.meme',
     ],
   },
+  preview: {
+    port: 6092,
+    host: true,
+    allowedHosts: [
+      'hazelnut-user-app.starkpump.meme',
+      '.starkpump.meme',
+      'vcr-despite-forest-hampshire.trycloudflare.com',
+      '.trycloudflare.com',
+      '.ngrok.app',
+      '.ngrok.io',
+    ],
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
