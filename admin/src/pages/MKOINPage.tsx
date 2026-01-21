@@ -84,7 +84,7 @@ export const MKOINPage: React.FC = () => {
           <div>
             <p className="text-blue-100 text-sm mb-1">Total MKOIN Supply</p>
             <p className="text-4xl font-bold">
-              {totalSupply?.total_supply ? parseFloat(totalSupply.total_supply).toLocaleString() : '0'} MKOIN
+              {totalSupply?.total_supply || '0'} MKOIN
             </p>
             <p className="text-blue-100 text-xs mt-2">
               {totalSupply?.total_supply_nanocoins || '0'} nanocoins
@@ -148,8 +148,8 @@ export const MKOINPage: React.FC = () => {
           {mintResult && (
             <div
               className={`mt-4 p-4 rounded-md ${mintResult.success
-                  ? 'bg-green-50 border border-green-200'
-                  : 'bg-red-50 border border-red-200'
+                ? 'bg-green-50 border border-green-200'
+                : 'bg-red-50 border border-red-200'
                 }`}
             >
               <div className="flex items-start">
@@ -211,8 +211,8 @@ export const MKOINPage: React.FC = () => {
                     </div>
                     <span
                       className={`text-xs px-2 py-1 rounded-full ${mint.status === 'confirmed'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-yellow-100 text-yellow-700'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-yellow-100 text-yellow-700'
                         }`}
                     >
                       {mint.status}
@@ -272,10 +272,10 @@ export const MKOINPage: React.FC = () => {
                     <td className="px-4 py-3 text-sm">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${mint.status === 'confirmed'
-                            ? 'bg-green-100 text-green-700'
-                            : mint.status === 'pending'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
+                          ? 'bg-green-100 text-green-700'
+                          : mint.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-red-100 text-red-700'
                           }`}
                       >
                         {mint.status}
