@@ -86,7 +86,8 @@ export class FactoryService {
       );
       jettonAddress = jettonAddr.toString();
     } catch (error) {
-      console.error("Error getting jetton address:", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`Error getting jetton address: ${errorMsg}`);
       // Fallback: generate placeholder
       jettonAddress = `pending_${Date.now()}`;
     }
@@ -136,7 +137,8 @@ export class FactoryService {
       );
       return farmer?.toString() || null;
     } catch (error) {
-      console.error("Error getting farmer wallet:", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`Error getting farmer wallet: ${errorMsg}`);
       return null;
     }
   }

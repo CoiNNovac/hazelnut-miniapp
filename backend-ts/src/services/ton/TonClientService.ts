@@ -1,7 +1,7 @@
-import { TonClient, WalletContractV5R1 } from '@ton/ton';
-import { Address, toNano } from '@ton/core';
-import { mnemonicToWalletKey, KeyPair } from '@ton/crypto';
-import { config } from '../../config';
+import { TonClient, WalletContractV5R1 } from "@ton/ton";
+import { Address, toNano } from "@ton/core";
+import { mnemonicToWalletKey, KeyPair } from "@ton/crypto";
+import { config } from "../../config";
 
 export class TonClientService {
   private static instance: TonClientService;
@@ -25,13 +25,15 @@ export class TonClientService {
 
   async initialize(): Promise<void> {
     if (!config.adminMnemonic) {
-      console.warn('ADMIN_MNEMONIC not configured, TON operations will be disabled');
+      console.warn(
+        "ADMIN_MNEMONIC not configured, TON operations will be disabled",
+      );
       return;
     }
 
-    const mnemonic = config.adminMnemonic.split(' ');
+    const mnemonic = config.adminMnemonic.split(" ");
     if (mnemonic.length !== 24) {
-      throw new Error('Invalid mnemonic: must be 24 words');
+      throw new Error("Invalid mnemonic: must be 24 words");
     }
 
     this.adminKeyPair = await mnemonicToWalletKey(mnemonic);
@@ -40,7 +42,9 @@ export class TonClientService {
       workchain: 0,
     });
 
-    console.log(`Admin wallet initialized: ${this.adminWallet.address.toString()}`);
+    console.log(
+      `Admin wallet initialized: ${this.adminWallet.address.toString()}`,
+    );
   }
 
   getClient(): TonClient {
@@ -49,7 +53,7 @@ export class TonClientService {
 
   getAdminWallet(): WalletContractV5R1 {
     if (!this.adminWallet) {
-      throw new Error('Admin wallet not initialized');
+      throw new Error("Admin wallet not initialized");
     }
     return this.adminWallet;
   }
@@ -60,7 +64,7 @@ export class TonClientService {
 
   getAdminSecretKey(): Buffer {
     if (!this.adminKeyPair) {
-      throw new Error('Admin key pair not initialized');
+      throw new Error("Admin key pair not initialized");
     }
     return this.adminKeyPair.secretKey;
   }
@@ -76,7 +80,10 @@ export class TonClientService {
     return this.client.getBalance(addr);
   }
 
-  async waitForTransaction(address: string, timeout: number = 60000): Promise<boolean> {
+  async waitForTransaction(
+    address: string,
+    timeout: number = 60000,
+  ): Promise<boolean> {
     const startTime = Date.now();
     const addr = Address.parse(address);
 
@@ -84,7 +91,9 @@ export class TonClientService {
 
     while (Date.now() - startTime < timeout) {
       try {
-        const transactions = await this.client.getTransactions(addr, { limit: 1 });
+        const transactions = await this.client.getTransactions(addr, {
+          limit: 1,
+        });
         if (transactions.length > 0) {
           const currentLt = transactions[0].lt;
           if (lastLt === undefined) {
@@ -94,7 +103,8 @@ export class TonClientService {
           }
         }
       } catch (error) {
-        console.error('Error checking transaction:', error);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error(`Error checking transaction: ${errorMsg}`);
       }
 
       await this.sleep(2000);

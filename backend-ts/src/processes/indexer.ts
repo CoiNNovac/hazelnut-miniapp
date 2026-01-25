@@ -9,7 +9,7 @@ export class FactoryIndexer {
   private crawler: TonCrawler;
   private factoryAddress: string;
   private isRunning: boolean = false;
-  private pollInterval: number = 5000; // 5 seconds
+  private pollInterval: number = 15000; // 15 seconds
 
   constructor() {
     this.factoryAddress = config.factoryAddress;
@@ -114,7 +114,8 @@ export class FactoryIndexer {
         // Wait before next poll
         await new Promise((resolve) => setTimeout(resolve, this.pollInterval));
       } catch (error) {
-        console.error("Error in indexer loop:", error);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error(`Error in indexer loop: ${errorMsg}`);
         await new Promise((resolve) =>
           setTimeout(resolve, this.pollInterval * 2),
         );
@@ -162,7 +163,8 @@ export class FactoryIndexer {
         { processed: true },
       );
     } catch (error) {
-      console.error(`Error processing transaction ${tx.hash}:`, error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`Error processing transaction ${tx.hash}: ${errorMsg}`);
     }
   }
 
@@ -219,7 +221,8 @@ export class FactoryIndexer {
 
       return null;
     } catch (error) {
-      console.error("Error parsing transaction data:", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`Error parsing transaction data: ${errorMsg}`);
       return null;
     }
   }
@@ -251,7 +254,8 @@ export class FactoryIndexer {
         }
       }
     } catch (error) {
-      console.error("Error handling event:", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`Error handling event: ${errorMsg}`);
     }
   }
 

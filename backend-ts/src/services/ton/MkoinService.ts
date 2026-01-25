@@ -113,7 +113,8 @@ export class MkoinService {
         return `mkoin_mint_${Date.now()}`;
       }
     } catch (error) {
-      console.error("Error fetching transaction hash:", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`Error fetching transaction hash: ${errorMsg}`);
       // Return fallback hash if query fails
       return `mkoin_mint_${Date.now()}`;
     }
@@ -143,7 +144,8 @@ export class MkoinService {
 
       return walletData.balance;
     } catch (error) {
-      console.error("Error getting MKOIN balance:", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`Error getting MKOIN balance: ${errorMsg}`);
       return BigInt(0);
     }
   }

@@ -171,7 +171,8 @@ export class TonCrawler {
         lastTransactionHash: state.lastTransaction.hash,
       };
     } catch (error) {
-      console.error(`Error fetching account state for ${address}:`, error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`Error fetching account state for ${address}: ${errorMsg}`);
       return null;
     }
   }
