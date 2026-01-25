@@ -20,7 +20,11 @@ export const config = {
   // TON Blockchain
   tonEndpoint:
     process.env.TON_ENDPOINT || "https://testnet.toncenter.com/api/v2/jsonRPC",
-  tonApiKey: process.env.TON_API_KEY,
+  tonApiKeys: process.env.TON_API_KEY
+    ? process.env.TON_API_KEY.split(",")
+        .map((key) => key.trim())
+        .filter((key) => key.length > 0)
+    : [],
 
   // Admin Wallet
   adminMnemonic: process.env.ADMIN_MNEMONIC || "",
@@ -36,6 +40,16 @@ export const config = {
   // MKOIN Token Settings
   mkoinDecimals: parseInt(process.env.MKOIN_DECIMALS || "9", 10), // MKOIN uses 9 decimals (like EUR)
 };
+
+/**
+ * Get a random TON API key from the configured list
+ * This helps distribute requests across multiple API keys for better rate limiting
+ */
+export function getRandomTonApiKey(): string | undefined {
+  if (config.tonApiKeys.length === 0) return undefined;
+  const randomIndex = Math.floor(Math.random() * config.tonApiKeys.length);
+  return config.tonApiKeys[randomIndex];
+}
 
 export function validateConfig(): void {
   const requiredVars = ["MONGODB_URI", "JWT_SECRET", "ADMIN_MNEMONIC"];

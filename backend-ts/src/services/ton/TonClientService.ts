@@ -1,7 +1,7 @@
 import { TonClient, WalletContractV5R1 } from "@ton/ton";
 import { Address, toNano } from "@ton/core";
 import { mnemonicToWalletKey, KeyPair } from "@ton/crypto";
-import { config } from "../../config";
+import { config, getRandomTonApiKey } from "../../config";
 
 export class TonClientService {
   private static instance: TonClientService;
@@ -12,7 +12,7 @@ export class TonClientService {
   private constructor() {
     this.client = new TonClient({
       endpoint: config.tonEndpoint,
-      apiKey: config.tonApiKey,
+      apiKey: getRandomTonApiKey(),
     });
   }
 

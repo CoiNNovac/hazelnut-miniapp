@@ -71,8 +71,9 @@ export class MkoinController {
       mintRecord.status = "failed";
       await mintRecord.save();
 
-      console.error("MKOIN minting failed:", error);
-      throw new BadRequestError(`Minting failed: ${(error as Error).message}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`MKOIN minting failed: ${errorMsg}`);
+      throw new BadRequestError(`Minting failed: ${errorMsg}`);
     }
   }
 

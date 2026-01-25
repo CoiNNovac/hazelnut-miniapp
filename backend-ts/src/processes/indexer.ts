@@ -1,4 +1,4 @@
-import { config } from "../config";
+import { config, getRandomTonApiKey } from "../config";
 import { TonCrawler, Transaction } from "../utils/tonCrawler";
 import { IndexedTransaction } from "../db/models/IndexedTransaction";
 import { IndexerState } from "../db/models/IndexerState";
@@ -15,7 +15,7 @@ export class FactoryIndexer {
     this.factoryAddress = config.factoryAddress;
     this.crawler = new TonCrawler({
       endpoint: config.tonEndpoint,
-      apiKey: config.tonApiKey,
+      apiKey: getRandomTonApiKey(),
       pollInterval: this.pollInterval,
     });
   }
