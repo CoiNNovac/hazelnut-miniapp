@@ -1,7 +1,7 @@
-import { Schema, model, Document } from 'mongoose';
-import { UserRole } from '../../types';
+import { Schema, model, Document } from "mongoose";
+import { UserRole } from "../../types";
 
-export interface IUser extends Document {
+export interface IUser extends Omit<Document, "_id"> {
   _id: string;
   username?: string;
   passwordHash?: string;
@@ -21,8 +21,8 @@ const UserSchema = new Schema<IUser>(
     address: { type: String, required: true, unique: true, index: true },
     role: {
       type: String,
-      enum: ['superadmin', 'admin', 'farmer'],
-      default: 'farmer',
+      enum: ["superadmin", "admin", "farmer"],
+      default: "farmer",
     },
     name: { type: String },
     isDisabled: { type: Boolean, default: false },
@@ -30,10 +30,10 @@ const UserSchema = new Schema<IUser>(
   {
     timestamps: true,
     _id: false,
-  }
+  },
 );
 
 UserSchema.index({ role: 1 });
 UserSchema.index({ isDisabled: 1 });
 
-export const User = model<IUser>('User', UserSchema);
+export const User = model<IUser>("User", UserSchema);

@@ -1,7 +1,7 @@
-import { Schema, model, Document } from 'mongoose';
-import { CampaignStatus } from '../../types';
+import { Schema, model, Document } from "mongoose";
+import { CampaignStatus } from "../../types";
 
-export interface ICampaign extends Document {
+export interface ICampaign extends Omit<Document, "_id"> {
   _id: string;
   farmerId: string;
   name: string;
@@ -26,7 +26,7 @@ export interface ICampaign extends Document {
 const CampaignSchema = new Schema<ICampaign>(
   {
     _id: { type: String, required: true },
-    farmerId: { type: String, required: true, ref: 'User', index: true },
+    farmerId: { type: String, required: true, ref: "User", index: true },
     name: { type: String, required: true },
     description: { type: String },
     tokenName: { type: String, required: true },
@@ -39,8 +39,16 @@ const CampaignSchema = new Schema<ICampaign>(
     suggestedPrice: { type: String, required: true },
     status: {
       type: String,
-      enum: ['pending', 'approved', 'running', 'paused', 'finished', 'rejected', 'cancelled'],
-      default: 'pending',
+      enum: [
+        "pending",
+        "approved",
+        "running",
+        "paused",
+        "finished",
+        "rejected",
+        "cancelled",
+      ],
+      default: "pending",
       index: true,
     },
     tokenAddress: { type: String, sparse: true, index: true },
@@ -51,10 +59,10 @@ const CampaignSchema = new Schema<ICampaign>(
   {
     timestamps: true,
     _id: false,
-  }
+  },
 );
 
 CampaignSchema.index({ status: 1, startTime: 1 });
 CampaignSchema.index({ farmerId: 1, status: 1 });
 
-export const Campaign = model<ICampaign>('Campaign', CampaignSchema);
+export const Campaign = model<ICampaign>("Campaign", CampaignSchema);
