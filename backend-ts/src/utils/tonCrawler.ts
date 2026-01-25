@@ -77,7 +77,8 @@ export class TonCrawler {
         })),
       }));
     } catch (error) {
-      console.error(`Error fetching transactions for ${address}:`, error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`Error fetching transactions for ${address}: ${errorMsg}`);
       return [];
     }
   }
