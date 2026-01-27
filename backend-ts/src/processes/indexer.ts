@@ -4,6 +4,80 @@ import { IndexedTransaction } from "../db/models/IndexedTransaction";
 import { IndexerState } from "../db/models/IndexerState";
 import { Campaign } from "../db/models/Campaign";
 import { Address, Cell, Slice } from "@ton/core";
+import axios from "axios";
+
+/**
+ * Sleep for a specified number of milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Get TON API endpoint URL
+ */
+function getTonApiUrl(): string {
+  // Use the V3 endpoint from config, but can be modified to use V2 if needed
+  return config.tonEndpoint;
+}
+
+/**
+ * Get contract transactions with retry logic using TonChainStack V2 RPC
+ */
+export async function getContractTransactionWithRetry(
+  addr: Address,
+  lastIndexedTonLogicalTime: string,
+  limit: number = 200,
+): Promise<any[] | null> {
+  if (addr == null) {
+    console.log("address of contract is null");
+    return null;
+  }
+
+  const params = {
+    address: addr.toString(),
+    limit: limit,
+    to_lt: lastIndexedTonLogicalTime,
+  };
+
+  const url = getTonApiUrl();
+  console.log("getContractTransactionWithRetry url", url, params);
+  const data = {
+    jsonrpc: "2.0",
+    id: 1,
+    method: "getTransactions",
+    params,
+  };
+
+  let trial = 10;
+  while (trial > 0) {
+    console.log("trial get txs", trial, addr.toString());
+    try {
+      let res = await axios.post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: 30000,
+      });
+
+      if (res.data && res.data.result) {
+        // Reverse to get oldest first
+        return res.data.result.reverse();
+      }
+    } catch (error) {
+      console.log("error get txs", error);
+      console.error(
+        `Error fetching transactions (trial ${trial}):`,
+        error instanceof Error ? error.message : String(error),
+      );
+      trial--;
+      if (trial > 0) {
+        await sleep(1000);
+      }
+    }
+  }
+  return null;
+}
 
 export class FactoryIndexer {
   private crawler: TonCrawler;
@@ -45,7 +119,7 @@ export class FactoryIndexer {
 
       state = await IndexerState.create({
         contractAddress: this.factoryAddress,
-        lastProcessedLt: accountState?.lastTransactionLt || "0",
+        lastProcessedLt: "0", //accountState?.lastTransactionLt || "0",
         lastProcessedHash: accountState?.lastTransactionHash || "",
         lastProcessedTime: new Date(),
         isRunning: true,
@@ -85,17 +159,22 @@ export class FactoryIndexer {
 
     while (this.isRunning) {
       try {
-        // Get new transactions
-        const newTxs = await this.crawler.getTransactionsSince(
-          this.factoryAddress,
+        // Get new transactions using retry logic
+        const factoryAddr = Address.parse(this.factoryAddress);
+        const rawTxs = await getContractTransactionWithRetry(
+          factoryAddr,
           lastLt,
+          200,
         );
 
-        if (newTxs.length > 0) {
-          console.log(`Found ${newTxs.length} new transactions`);
+        if (rawTxs && rawTxs.length > 0) {
+          console.log(`Found ${rawTxs.length} new transactions`);
 
-          // Process transactions in order (oldest first)
-          for (const tx of newTxs.reverse()) {
+          // Convert raw transactions to our Transaction format
+          const newTxs = this.convertRawTransactions(rawTxs);
+
+          // Process transactions in order (already sorted by getContractTransactionWithRetry)
+          for (const tx of newTxs) {
             await this.processTransaction(tx);
             lastLt = tx.lt;
 
@@ -109,18 +188,49 @@ export class FactoryIndexer {
               },
             );
           }
+        } else {
+          console.log("No new transactions found");
         }
 
         // Wait before next poll
-        await new Promise((resolve) => setTimeout(resolve, this.pollInterval));
+        await sleep(this.pollInterval);
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         console.error(`Error in indexer loop: ${errorMsg}`);
-        await new Promise((resolve) =>
-          setTimeout(resolve, this.pollInterval * 2),
-        );
+        await sleep(this.pollInterval * 2);
       }
     }
+  }
+
+  /**
+   * Convert raw transaction data from TonChainStack API to our Transaction format
+   */
+  private convertRawTransactions(rawTxs: any[]): Transaction[] {
+    return rawTxs.map((tx: any) => {
+      const inMsg = tx.in_msg;
+      const outMsgs = tx.out_msgs || [];
+
+      return {
+        hash: tx.transaction_id?.hash || tx.hash || "",
+        lt: tx.transaction_id?.lt?.toString() || tx.lt?.toString() || "0",
+        utime: tx.utime || tx.now || 0,
+        inMsg:
+          inMsg && inMsg.source
+            ? {
+                source: inMsg.source || "",
+                destination: inMsg.destination || this.factoryAddress,
+                value: inMsg.value || "0",
+                body: inMsg.body_hash || inMsg.message || "",
+              }
+            : undefined,
+        outMsgs: outMsgs.map((msg: any) => ({
+          source: msg.source || this.factoryAddress,
+          destination: msg.destination || "",
+          value: msg.value || "0",
+          body: msg.body_hash || msg.message || "",
+        })),
+      };
+    });
   }
 
   /**

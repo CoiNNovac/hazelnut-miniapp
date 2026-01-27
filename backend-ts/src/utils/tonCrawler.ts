@@ -1,5 +1,5 @@
 import { Address } from "@ton/core";
-import { TonClient } from "@ton/ton";
+import axios from "axios";
 
 export interface Transaction {
   hash: string;
@@ -27,64 +27,114 @@ export interface CrawlerOptions {
 }
 
 export class TonCrawler {
-  private client: TonClient;
+  private endpoint: string;
+  private apiKey?: string;
   private batchSize: number;
   private pollInterval: number;
 
   constructor(options: CrawlerOptions) {
-    this.client = new TonClient({
-      endpoint: options.endpoint,
-      apiKey: options.apiKey,
-    });
+    this.endpoint = options.endpoint;
+    this.apiKey = options.apiKey;
     this.batchSize = options.batchSize || 100;
     this.pollInterval = options.pollInterval || 5000; // 5 seconds
   }
 
   /**
-   * Get transactions for a specific address
+   * Get transactions for a specific address using REST API
+   * @param address - Contract address
+   * @param limit - Number of transactions to fetch
+   * @param lt - Logical time for pagination (fetch transactions before this lt)
+   * @param hash - Transaction hash for pagination
+   * @param toLt - Only fetch transactions with lt > toLt (newer than toLt)
    */
   async getTransactions(
     address: string,
-    limit: number = 100,
+    limit: number = 1,
     lt?: string,
     hash?: string,
+    toLt?: string,
   ): Promise<Transaction[]> {
     try {
-      const addr = Address.parse(address);
-      const transactions = await this.client.getTransactions(addr, {
-        limit,
-        lt: lt,
-        hash: hash,
-      } as any);
+      // Use TonCenter REST API v2 format
+      const url = `${this.endpoint}/getTransactions`;
+      const params: any = {
+        address: address,
+        limit: limit,
+      };
 
-      return transactions.map((tx) => ({
-        hash: tx.hash().toString("base64"),
-        lt: tx.lt.toString(),
-        utime: tx.now,
-        inMsg: tx.inMessage
-          ? {
-              source: tx.inMessage.info.src?.toString(),
-              destination: tx.inMessage.info.dest?.toString() || "",
-              value: (tx.inMessage.info as any).value?.coins?.toString() || "0",
-              body: tx.inMessage.body.hash().toString("base64"),
-            }
-          : undefined,
-        outMsgs: tx.outMessages.values().map((msg) => ({
-          source: msg.info.src?.toString() || "",
-          destination: msg.info.dest?.toString(),
-          value: (msg.info as any).value?.coins?.toString() || "0",
-          body: msg.body.hash().toString("base64"),
-        })),
-      }));
+      // Pagination: fetch transactions before this lt
+      if (lt) {
+        params.lt = lt;
+      }
+      if (hash) {
+        params.hash = hash;
+      }
+
+      // Filter: only fetch transactions after this lt
+      if (toLt) {
+        params.to_lt = toLt;
+      }
+
+      if (this.apiKey) {
+        params.api_key = this.apiKey;
+      }
+
+      console.log(`Fetching transactions from: ${url}`, params);
+
+      const response = await axios.get(url, {
+        params,
+        timeout: 30000,
+      });
+
+      if (!response.data || !response.data.ok || !response.data.result) {
+        console.log("No transactions found in response:", response.data);
+        return [];
+      }
+
+      const transactions = response.data.result;
+      console.log(`Received ${transactions.length} transactions`);
+
+      return transactions.map((tx: any) => {
+        // Parse transaction data from TonCenter format
+        const inMsg = tx.in_msg;
+        const outMsgs = tx.out_msgs || [];
+
+        return {
+          hash: tx.transaction_id?.hash || tx.hash || "",
+          lt: tx.transaction_id?.lt?.toString() || tx.lt?.toString() || "0",
+          utime: tx.utime || tx.now || 0,
+          inMsg:
+            inMsg && inMsg.source
+              ? {
+                  source: inMsg.source || "",
+                  destination: inMsg.destination || address,
+                  value: inMsg.value || "0",
+                  body: inMsg.body_hash || inMsg.message || "",
+                }
+              : undefined,
+          outMsgs: outMsgs.map((msg: any) => ({
+            source: msg.source || address,
+            destination: msg.destination || "",
+            value: msg.value || "0",
+            body: msg.body_hash || msg.message || "",
+          })),
+        };
+      });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error(`Error fetching transactions for ${address}: ${errorMsg}`);
+      console.error(`Error fetching transactions for ${address}:`, errorMsg);
+      if (axios.isAxiosError(error)) {
+        console.error("Response data:", error.response?.data);
+        console.error("Response status:", error.response?.status);
+        console.error("Request URL:", error.config?.url);
+      }
       return [];
     }
   }
 
   /**
-   * Get latest transactions since a specific logical time
+   * Get latest transactions since a specific logical time (optimized)
+   * Uses to_lt parameter to only fetch new transactions
    */
   async getTransactionsSince(
     address: string,
@@ -94,34 +144,49 @@ export class TonCrawler {
     let lastLt: string | undefined;
     let lastHash: string | undefined;
 
+    console.log(`Fetching transactions since lt: ${sinceLt}`);
+
     while (true) {
+      // Use to_lt parameter to only fetch transactions newer than sinceLt
       const txs = await this.getTransactions(
         address,
         this.batchSize,
         lastLt,
         lastHash,
+        sinceLt, // to_lt parameter - only fetch tx with lt > sinceLt
       );
 
-      if (txs.length === 0) break;
+      if (txs.length === 0) {
+        console.log("No more new transactions found");
+        break;
+      }
 
-      // Filter transactions newer than sinceLt
-      const newTxs = txs.filter((tx) => BigInt(tx.lt) > BigInt(sinceLt));
+      console.log(`Fetched ${txs.length} new transactions`);
 
-      if (newTxs.length === 0) break;
-
-      allTransactions.push(...newTxs);
+      // All returned transactions should be newer than sinceLt due to to_lt filter
+      allTransactions.push(...txs);
 
       // If we got less than batch size, we've reached the end
-      if (txs.length < this.batchSize) break;
+      if (txs.length < this.batchSize) {
+        console.log("Reached end of new transactions");
+        break;
+      }
 
-      // Update pagination
+      // Update pagination to fetch next batch
       const lastTx = txs[txs.length - 1];
       lastLt = lastTx.lt;
       lastHash = lastTx.hash;
 
-      // If the oldest transaction in this batch is older than sinceLt, we're done
-      if (BigInt(lastTx.lt) <= BigInt(sinceLt)) break;
+      console.log(`Next pagination: lt=${lastLt}, hash=${lastHash}`);
+
+      // Safety check: if the oldest transaction in this batch is not newer than sinceLt, stop
+      if (BigInt(lastTx.lt) <= BigInt(sinceLt)) {
+        console.log("Reached sinceLt boundary, stopping");
+        break;
+      }
     }
+
+    console.log(`Total fetched: ${allTransactions.length} new transactions`);
 
     // Sort by lt descending (newest first)
     return allTransactions.sort((a, b) => Number(BigInt(b.lt) - BigInt(a.lt)));
@@ -150,7 +215,7 @@ export class TonCrawler {
   }
 
   /**
-   * Get account state and last transaction
+   * Get account state and last transaction using REST API
    */
   async getAccountState(address: string): Promise<{
     balance: string;
@@ -158,17 +223,31 @@ export class TonCrawler {
     lastTransactionHash: string;
   } | null> {
     try {
-      const addr = Address.parse(address);
-      const state = await this.client.getContractState(addr);
+      // Use TonCenter REST API v2 format
+      const url = `${this.endpoint}/getAddressInformation`;
+      const params: any = {
+        address: address,
+      };
 
-      if (!state.lastTransaction) {
+      if (this.apiKey) {
+        params.api_key = this.apiKey;
+      }
+
+      const response = await axios.get(url, {
+        params,
+        timeout: 30000,
+      });
+
+      if (!response.data || !response.data.ok || !response.data.result) {
         return null;
       }
 
+      const account = response.data.result;
+
       return {
-        balance: state.balance.toString(),
-        lastTransactionLt: state.lastTransaction.lt.toString(),
-        lastTransactionHash: state.lastTransaction.hash,
+        balance: account.balance?.toString() || "0",
+        lastTransactionLt: account.last_transaction_id?.lt?.toString() || "0",
+        lastTransactionHash: account.last_transaction_id?.hash || "",
       };
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -219,9 +298,9 @@ export class TonCrawler {
   }
 
   /**
-   * Get client instance
+   * Get endpoint URL
    */
-  getClient(): TonClient {
-    return this.client;
+  getEndpoint(): string {
+    return this.endpoint;
   }
 }

@@ -19,7 +19,8 @@ export const config = {
 
   // TON Blockchain
   tonEndpoint:
-    process.env.TON_ENDPOINT || "https://testnet.toncenter.com/api/v2/jsonRPC",
+    process.env.TON_CONFIG_URL ||
+    "https://ton-testnet.core.chainstack.com/6cb44892388774df78c01b3bed9eef1a/api/v3",
   tonApiKeys: process.env.TON_API_KEY
     ? process.env.TON_API_KEY.split(",")
         .map((key) => key.trim())
